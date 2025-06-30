@@ -1,13 +1,12 @@
-# Spring Boot 3.4 Best Practices Guidelines with Domain-Driven Design
+# Spring Boot 3.4 Best Practices Guidelines with Hexagonal Architecture
 
 ## Table of Contents
 
 1. [Introduction](#introduction)
-2. [Domain-Driven Design Architecture](#1-domain-driven-design-architecture)
-    1. [Strategic Design](#11-strategic-design)
-    2. [Tactical Design Patterns](#12-tactical-design-patterns)
-    3. [Hexagonal Architecture](#13-hexagonal-architecture)
-    4. [Directory Structure](#14-directory-structure)
+2. [Hexagonal Architecture](#1-hexagonal-architecture)
+    1. [Core Concepts](#11-core-concepts)
+    2. [Ports and Adapters](#12-ports-and-adapters)
+    3. [Directory Structure](#13-directory-structure)
 3. [Application Layer](#2-application-layer)
     1. [Use Cases](#21-use-cases)
     2. [Application Services](#22-application-services)
@@ -17,7 +16,7 @@
     2. [Request/Response Objects](#32-requestresponse-objects)
     3. [Exception Handling](#33-exception-handling)
     4. [Persistence Implementations](#34-persistence-implementations)
-5. [Testing in DDD](#4-testing-in-ddd)
+5. [Testing in Hexagonal Architecture](#4-testing-in-hexagonal-architecture)
     1. [Domain Model Testing](#41-domain-model-testing)
     2. [Use Case Testing](#42-use-case-testing)
     3. [Infrastructure Testing](#43-infrastructure-testing)
@@ -30,10 +29,9 @@
     4. [API Documentation](#54-api-documentation)
     5. [HTTP Client with RestClient](#55-http-client-with-restclient)
 7. [Common Pitfalls and Gotchas](#6-common-pitfalls-and-gotchas)
-    1. [DDD-Specific Challenges](#61-ddd-specific-challenges)
-    2. [Edge Cases to Consider](#62-edge-cases-to-consider)
-    3. [Version Compatibility](#63-version-compatibility)
-    4. [Anti-Patterns to Avoid](#64-anti-patterns-to-avoid)
+    1. [Edge Cases to Consider](#61-edge-cases-to-consider)
+    2. [Version Compatibility](#62-version-compatibility)
+    3. [Anti-Patterns to Avoid](#63-anti-patterns-to-avoid)
 8. [Performance Optimization Techniques](#7-performance-optimization-techniques)
     1. [Database Query Optimization](#71-database-query-optimization)
     2. [Caching](#72-caching)
@@ -56,133 +54,23 @@
 This document outlines the architecture, development, and testing guidelines for applications built with Spring Boot
 3.4. Following these practices will help ensure scalable, maintainable, and robust applications.
 
-## 1. Domain-Driven Design Architecture
+## 1. Hexagonal Architecture
 
-### 1.1 Strategic Design
+### 1.1 Core Concepts
 
-Domain-Driven Design (DDD) starts with strategic design to understand and model the business domain:
+Hexagonal Architecture, also known as Ports and Adapters, is an architectural pattern that allows an application to be equally driven by users, programs, automated tests, or batch scripts, and to be developed and tested in isolation from its eventual run-time devices and databases.
 
-- **Ubiquitous Language**: Establish a common language between developers and domain experts
-- **Bounded Contexts**: Define clear boundaries for different domain models
-- **Context Mapping**: Document relationships between bounded contexts
-- **Core Domain**: Identify and focus on the most valuable part of your application
-- **Subdomains**: Divide the domain into manageable parts (Core, Supporting, Generic)
+Key principles of Hexagonal Architecture:
 
-Example of a context map for an e-commerce application:
+- **Domain-Centric**: The domain model is at the center of the application
+- **Dependency Rule**: Dependencies always point inward, toward the domain
+- **Ports**: Interfaces that define how the application interacts with the outside world
+- **Adapters**: Implementations of ports that connect the application to external systems
+- **Isolation**: The domain model is isolated from external concerns
 
-```
-+------------------------+       +------------------------+
-|  Product Catalog       |       |  Order Management      |
-|  -----------------     |       |  -----------------     |
-|  - Products            |<----->|  - Orders              |
-|  - Categories          |       |  - Order Items         |
-|  - Product Reviews     |       |  - Shipping            |
-+------------------------+       +------------------------+
-           ^                               ^
-           |                               |
-           v                               v
-+------------------------+       +------------------------+
-|  Customer Management   |       |  Payment Processing    |
-|  -----------------     |<----->|  -----------------     |
-|  - Customers           |       |  - Payments            |
-|  - Addresses           |       |  - Refunds             |
-|  - Preferences         |       |  - Payment Methods     |
-+------------------------+       +------------------------+
-```
+### 1.2 Ports and Adapters
 
-### 1.2 Tactical Design Patterns
-
-Implement these tactical patterns to create a rich domain model:
-
-- **Entities**: Objects with identity that changes over time
-  ```java
-  public class Customer extends AggregateRoot {
-      private CustomerId id;
-      private String name;
-      private Email email;
-      // Business methods that enforce invariants
-  }
-  ```
-
-- **Value Objects**: Immutable objects defined by their attributes
-  ```java
-  public class Email extends ValueObject {
-      private final String address;
-
-      public Email(String address) {
-          if (!isValid(address)) {
-              throw new DomainException("Invalid email format");
-          }
-          this.address = address;
-      }
-
-      private boolean isValid(String email) {
-          // Validation logic
-          return email != null && email.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$");
-      }
-  }
-  ```
-
-- **Aggregates**: Cluster of entities and value objects with a root entity
-  ```java
-  public class Order extends AggregateRoot {
-      private OrderId id;
-      private CustomerId customerId;
-      private Set<OrderItem> items;
-      private OrderStatus status;
-
-      public void addItem(Product product, int quantity) {
-          // Business logic with invariant enforcement
-          if (status != OrderStatus.DRAFT) {
-              throw new DomainException("Cannot modify a non-draft order");
-          }
-          items.add(new OrderItem(product.getId(), quantity, product.getPrice()));
-      }
-
-      public void submit() {
-          if (items.isEmpty()) {
-              throw new DomainException("Cannot submit an empty order");
-          }
-          status = OrderStatus.SUBMITTED;
-      }
-  }
-  ```
-
-- **Domain Services**: Operations that don't belong to a specific entity
-  ```java
-  public class OrderPricingService {
-      public Money calculateTotalPrice(Order order, TaxRules taxRules) {
-          // Complex pricing logic involving multiple entities
-      }
-  }
-  ```
-
-- **Domain Events**: Record of something significant that happened in the domain
-  ```java
-  public class OrderSubmittedEvent extends DomainEvent {
-      private final OrderId orderId;
-      private final CustomerId customerId;
-
-      public OrderSubmittedEvent(OrderId orderId, CustomerId customerId) {
-          super();
-          this.orderId = orderId;
-          this.customerId = customerId;
-      }
-  }
-  ```
-
-- **Repositories**: Abstraction for persistence operations
-  ```java
-  public interface OrderRepository {
-      Order findById(OrderId id);
-      void save(Order order);
-      List<Order> findByCustomerId(CustomerId customerId);
-  }
-  ```
-
-### 1.3 Hexagonal Architecture
-
-Implement a hexagonal architecture (ports and adapters) to separate domain logic from external concerns:
+Implement a hexagonal architecture to separate domain logic from external concerns:
 
 - **Domain Layer**: Core business logic, entities, value objects, domain services
 - **Application Layer**: Use cases, application services, orchestration
@@ -195,7 +83,7 @@ Implement a hexagonal architecture (ports and adapters) to separate domain logic
 |  |                                  |    |
 |  |        Domain Layer              |    |
 |  |  (Entities, Value Objects,       |    |
-|  |   Aggregates, Domain Services)   |    |
+|  |   Domain Services)               |    |
 |  |                                  |    |
 |  +----------------------------------+    |
 |                   ^                      |
@@ -220,9 +108,9 @@ Implement a hexagonal architecture (ports and adapters) to separate domain logic
 +------------------------------------------+
 ```
 
-### 1.4 Directory Structure
+### 1.3 Directory Structure
 
-Follow a DDD-oriented directory structure to reflect bounded contexts and layers:
+Follow a Hexagonal Architecture-oriented directory structure:
 
 ```
 src/
@@ -232,40 +120,43 @@ src/
  │   │       ├── Application.java (Main entry point)
  │   │       ├── shared/
  │   │       │   ├── domain/
- │   │       │   │   ├── AggregateRoot.java
- │   │       │   │   ├── ValueObject.java
- │   │       │   │   └── DomainException.java
+ │   │       │   │   ├── exception/
+ │   │       │   │   └── valueobject/
  │   │       │   └── infrastructure/
  │   │       │       ├── config/
  │   │       │       └── security/
- │   │       ├── content/              (Bounded Context)
- │   │       │   ├── domain/
- │   │       │   │   ├── model/        (Entities, Value Objects)
- │   │       │   │   │   ├── Article.java
- │   │       │   │   │   ├── ArticleId.java
- │   │       │   │   │   └── Content.java
- │   │       │   │   ├── repository/   (Repository interfaces)
- │   │       │   │   │   └── ArticleRepository.java
- │   │       │   │   └── service/      (Domain Services)
- │   │       │   │       └── ArticleValidationService.java
- │   │       │   ├── application/
- │   │       │   │   ├── usecase/      (Use Cases)
- │   │       │   │   │   ├── CreateArticleUseCase.java
- │   │       │   │   │   └── PublishArticleUseCase.java
- │   │       │   │   └── ArticleMapper.java
- │   │       │   ├── infrastructure/
- │   │       │   │   ├── persistence/  (Repository implementations)
- │   │       │   │   │   └── MongoArticleRepository.java
- │   │       │   │   └── web/          (Controllers)
- │   │       │   │       └── ArticleController.java
- │   │       │   └── dto/              (Data Transfer Objects)
- │   │       │       ├── ArticleResponse.java
- │   │       │       └── CreateArticleRequest.java
- │   │       └── user/                 (Another Bounded Context)
- │   │           ├── domain/
- │   │           ├── application/
- │   │           ├── infrastructure/
- │   │           └── dto/
+ │   │       ├── domain/
+ │   │       │   ├── model/        (Entities, Value Objects)
+ │   │       │   │   ├── Article.java
+ │   │       │   │   ├── ArticleId.java
+ │   │       │   │   └── Content.java
+ │   │       │   └── service/      (Domain Services)
+ │   │       │       └── ArticleValidationService.java
+ │   │       ├── domain/port/
+ │   │       │   ├── in/           (Input Ports/Use Cases)
+ │   │       │   │   ├── CreateArticleUseCase.java
+ │   │       │   │   └── PublishArticleUseCase.java
+ │   │       │   └── out/          (Output Ports)
+ │   │       │       └── ArticleRepository.java
+ │   │       ├── application/
+ │   │       │   ├── service/      (Application Services)
+ │   │       │   │   ├── ArticleService.java
+ │   │       │   │   └── CommentService.java
+ │   │       │   └── mapper/       (Mappers)
+ │   │       │       └── ArticleMapper.java
+ │   │       └── infrastructure/
+ │   │           ├── adapter/
+ │   │           │   ├── in/       (Input Adapters)
+ │   │           │   │   ├── web/  (Controllers)
+ │   │           │   │   │   └── ArticleController.java
+ │   │           │   │   └── dto/  (Data Transfer Objects)
+ │   │           │   │       ├── ArticleResponse.java
+ │   │           │   │       └── CreateArticleRequest.java
+ │   │           │   └── out/      (Output Adapters)
+ │   │           │       └── persistence/ (Repository implementations)
+ │   │           │           └── MongoArticleRepository.java
+ │   │           └── config/       (Configuration)
+ │   │               └── BeanConfiguration.java
  │   └── resources/
  │       ├── application.properties or application.yml
  │       ├── static/            (Static resources)
@@ -273,21 +164,19 @@ src/
  └── test/
      ├── java/
      │   └── app/quantun/blog/
-     │       ├── content/
-     │       │   ├── domain/    (Domain tests)
-     │       │   ├── application/ (Use case tests)
-     │       │   └── infrastructure/ (Controller/Repository tests)
-     │       └── user/
+     │       ├── domain/        (Domain tests)
+     │       ├── application/   (Use case tests)
+     │       └── infrastructure/ (Adapter tests)
      └── resources/
          └── application-test.properties or application-test.yml
 ```
 
-Key principles for DDD directory structure:
+Key principles for Hexagonal Architecture directory structure:
 
-- **Bounded Context Separation**: Organize code by business domains
 - **Layer Separation**: Clearly separate domain, application, and infrastructure layers
 - **Domain Model Isolation**: Keep domain model free from infrastructure concerns
-- **Shared Kernel**: Common code shared between bounded contexts goes in `shared` package
+- **Ports and Adapters**: Organize code by ports (interfaces) and adapters (implementations)
+- **Dependency Direction**: Dependencies always point inward toward the domain
 
 ## 2. Application Layer
 
@@ -324,7 +213,7 @@ public class CreateArticleUseCase {
         // Generate slug using domain service
         Slug slug = slugService.generateUniqueSlug(title);
 
-        // Create aggregate using factory method
+        // Create article using factory method
         Article article = Article.create(articleId, title, content, owner);
 
         // Add tags if provided
@@ -460,7 +349,7 @@ The infrastructure layer implements technical capabilities that support the high
 
 ### 3.1 REST Controllers
 
-Controllers in DDD serve as adapters between the HTTP interface and the application layer:
+Controllers serve as adapters between the HTTP interface and the application layer:
 
 - Keep controllers thin, focusing only on HTTP concerns
 - Delegate all business logic to application use cases
@@ -698,15 +587,15 @@ public interface MongoArticleRepository extends MongoRepository<Article, String>
 }
 ```
 
-## 4. Testing in DDD
+## 4. Testing in Hexagonal Architecture
 
-Testing in Domain-Driven Design requires a strategic approach that respects the layered architecture and focuses on testing business rules and behaviors at the appropriate level.
+Testing in Hexagonal Architecture requires a strategic approach that respects the layered architecture and focuses on testing business rules and behaviors at the appropriate level.
 
 ### 4.1 Domain Model Testing
 
 Domain model tests focus on the business rules and invariants of your domain objects:
 
-- Test domain entities, value objects, and aggregates in isolation
+- Test domain entities and value objects in isolation
 - Focus on business rules and invariants
 - Use simple unit tests without frameworks when possible
 - Test domain services with their collaborators mocked
@@ -1036,7 +925,7 @@ class ArticleControllerSliceTest {
 
 ### 5.2 Database
 
-- **MongoDB**: Document database that works well with DDD aggregates
+- **MongoDB**: Document database that works well with domain models
 - **Spring Data MongoDB**: Repository abstraction for MongoDB
 - **MongoDB Testcontainers**: For integration testing with real MongoDB instances
 - **Embedded MongoDB**: For faster integration tests
@@ -1054,7 +943,7 @@ class ArticleControllerSliceTest {
 
 ### 5.5 HTTP Client with RestClient
 
-Spring Boot 3.4 includes support for the newer RestClient from Spring Framework 6.1, which is particularly useful for implementing adapters to external systems in a DDD architecture:
+Spring Boot 3.4 includes support for the newer RestClient from Spring Framework 6.1, which is particularly useful for implementing adapters to external systems in a Hexagonal Architecture:
 
 ```java
 @Component
@@ -1107,69 +996,21 @@ public class ExternalAuthorServiceAdapter implements AuthorService {
 
 ## 6. Common Pitfalls and Gotchas
 
-### 6.1 DDD-Specific Challenges
-
-- **Anemic Domain Model**: Avoid creating domain models that are just data holders without behavior
-- **Misidentifying Aggregates**: Make aggregates as small as possible while maintaining consistency boundaries
-- **Overusing Value Objects**: Not everything needs to be a value object; use them for concepts with identity based on attributes
-- **Ignoring Bounded Contexts**: Failing to identify and separate different contexts leads to a muddled model
-- **Repository Overuse**: Don't create a repository for every entity; repositories are for aggregate roots only
-- **Domain Logic in Application Layer**: Keep business rules in the domain layer, not in application services
-- **Leaking Domain Objects**: Don't expose domain objects to the outside world; use DTOs at the boundaries
-
-```java
-// AVOID: Anemic domain model
-public class Article {
-    private String id;
-    private String title;
-    private String content;
-    private String authorId;
-    private String status;
-
-    // Getters and setters only, no behavior
-}
-
-// BETTER: Rich domain model with behavior
-public class Article extends AggregateRoot {
-    private ArticleId id;
-    private Title title;
-    private Content content;
-    private AuthorId authorId;
-    private ArticleStatus status;
-
-    // Private constructor to enforce factory method
-    private Article() {}
-
-    // Factory method
-    public static Article create(ArticleId id, Title title, Content content, AuthorId authorId) {
-        // Creation logic with validation
-    }
-
-    // Business methods that enforce invariants
-    public void publish() {
-        if (this.status == ArticleStatus.PUBLISHED) {
-            throw new DomainException("Article is already published");
-        }
-        // Publishing logic
-    }
-}
-```
-
-### 6.2 Edge Cases to Consider
+### 6.1 Edge Cases to Consider
 
 - **Eventual Consistency**: In distributed systems, handle the fact that data might not be immediately consistent
 - **Concurrent Modifications**: Use optimistic locking with version fields to detect concurrent modifications
-- **Long-Running Processes**: Consider using sagas or process managers for operations that span multiple aggregates
-- **Large Aggregates**: Be cautious with large aggregates that might cause performance issues; consider breaking them down
-- **Cross-Bounded Context Queries**: Complex queries across bounded contexts might require specialized query models
+- **Long-Running Processes**: Consider using sagas or process managers for operations that span multiple domain entities
+- **Large Domain Models**: Be cautious with large domain models that might cause performance issues; consider breaking them down
+- **Cross-Domain Queries**: Complex queries across domains might require specialized query models
 
-### 6.3 Version Compatibility
+### 6.2 Version Compatibility
 
 - **Spring Boot Version**: Ensure dependencies are compatible with your Spring Boot version
 - **Java Version**: Verify Java version compatibility with Spring Boot release
 - **MongoDB Driver**: Check MongoDB driver compatibility with your MongoDB server version
 
-### 6.4 Anti-Patterns to Avoid
+### 6.3 Anti-Patterns to Avoid
 
 - **Smart UI Anti-Pattern**: Don't put domain logic in controllers or UI components
 - **Transaction Script**: Avoid procedural service methods that implement entire use cases without domain objects
@@ -1193,7 +1034,7 @@ public class ArticleService {
     }
 }
 
-// BETTER: Domain-driven approach
+// BETTER: Hexagonal Architecture approach
 @Service
 public class PublishArticleUseCase {
     private final ArticleRepository articleRepository;
@@ -1222,14 +1063,14 @@ public class PublishArticleUseCase {
 
 ### 7.1 Database Query Optimization
 
-In DDD applications, database optimization requires special attention:
+In Hexagonal Architecture applications, database optimization requires special attention:
 
-- **Aggregate Design**: Design aggregates to support efficient querying and loading
+- **Domain Model Design**: Design domain models to support efficient querying and loading
 - **Read Models**: Create specialized read models for complex queries
 - **Command-Query Responsibility Segregation (CQRS)**: Separate read and write models for high-performance scenarios
-- **Indexes**: Create indexes for frequently queried fields, especially aggregate identifiers
+- **Indexes**: Create indexes for frequently queried fields, especially domain identifiers
 - **Projections**: Use MongoDB projections to retrieve only needed fields
-- **Pagination**: Always paginate when retrieving collections of aggregates
+- **Pagination**: Always paginate when retrieving collections of domain objects
 
 ```java
 @Repository
@@ -1315,10 +1156,10 @@ public class CachedArticleRepository implements ArticleRepository {
 }
 ```
 
-Key caching considerations in DDD:
+Key caching considerations in Hexagonal Architecture:
 
-- Cache aggregate roots by their identifiers
-- Invalidate cache entries when aggregates are modified
+- Cache domain objects by their identifiers
+- Invalidate cache entries when domain objects are modified
 - Consider using Redis or Hazelcast for distributed caching in multi-instance environments
 - Be cautious with caching in write-heavy scenarios
 
@@ -1407,33 +1248,32 @@ public class ArticleController {
 
 ### 7.5 Load Testing
 
-- Test each bounded context separately to identify bottlenecks
-- Focus on aggregate root loading performance
+- Test each layer separately to identify bottlenecks
+- Focus on domain model loading performance
 - Measure repository implementation efficiency
 - Test with realistic data volumes that match production
-- Monitor memory usage to detect potential aggregate size issues
+- Monitor memory usage to detect potential domain model size issues
 
 ## 8. Development Environment and Tooling
 
-### 8.1 Recommended Tools for DDD
+### 8.1 Recommended Tools
 
 - **IDE**: IntelliJ IDEA, Eclipse, or Visual Studio Code with Spring Boot extensions
-- **Build Tool**: Gradle with multi-module support for bounded contexts
-- **Version Control**: Git with conventional commit messages and feature branches per bounded context
-- **API Testing**: Postman or Insomnia with environment variables for different contexts
+- **Build Tool**: Gradle with multi-module support for different layers
+- **Version Control**: Git with conventional commit messages
+- **API Testing**: Postman or Insomnia with environment variables
 - **Database Tools**: MongoDB Compass for document database visualization
-- **Diagram Tools**: Draw.io or PlantUML for context maps and aggregate visualizations
-- **Event Storming Tools**: Miro or Mural for collaborative domain modeling
+- **Diagram Tools**: Draw.io or PlantUML for architecture visualizations
 
 ### 8.2 Code Quality Tools
 
-- **Static Code Analysis**: SonarQube with custom rules for DDD patterns
-- **Architecture Validation**: ArchUnit to enforce DDD architectural constraints
+- **Static Code Analysis**: SonarQube with custom rules for architecture patterns
+- **Architecture Validation**: ArchUnit to enforce Hexagonal Architecture constraints
 - **Style Enforcement**: Checkstyle to ensure coding style consistency
 - **Code Quality**: PMD, SpotBugs to detect potential problems
 - **EditorConfig**: Use EditorConfig to maintain consistent formatting across editors
 
-Example of ArchUnit tests to enforce DDD architecture:
+Example of ArchUnit tests to enforce Hexagonal Architecture:
 
 ```java
 @AnalyzeClasses(packages = "app.quantun.blog")
@@ -1456,51 +1296,46 @@ class ArchitectureTest {
             .should().resideInAPackage("..infrastructure.persistence..");
 
     @ArchTest
-    static final ArchRule aggregateRootsShouldExtendAggregateRoot =
-        classes().that().areAnnotatedWith(Document.class)
-            .should().beAssignableTo(AggregateRoot.class);
+    static final ArchRule controllersShouldResideInWebPackage =
+        classes().that().areAnnotatedWith(RestController.class)
+            .should().resideInAPackage("..infrastructure.adapter.in.web..");
 
     @ArchTest
-    static final ArchRule valueObjectsShouldExtendValueObject =
-        classes().that().haveSimpleNameEndingWith("Id")
-            .or().haveSimpleNameEndingWith("Name")
-            .or().haveSimpleNameEndingWith("Email")
-            .or().haveSimpleNameEndingWith("Address")
-            .should().beAssignableTo(ValueObject.class);
+    static final ArchRule useCasesShouldResideInApplicationPackage =
+        classes().that().haveSimpleNameEndingWith("UseCase")
+            .should().resideInAPackage("..application..");
 }
 ```
 
 ## 9. General Best Practices
 
-### 9.1 Code Quality in DDD
+### 9.1 Code Quality
 
-- Follow the ubiquitous language consistently in code
-- Implement peer code reviews with domain experts when possible
+- Follow consistent naming conventions across the codebase
+- Implement peer code reviews
 - Keep methods small and focused on a single responsibility
 - Use meaningful names that reflect domain concepts
 - Write comprehensive tests at all levels (domain, application, infrastructure)
-- Document domain decisions and the reasoning behind them
+- Document architectural decisions and the reasoning behind them
 - Use comments to explain "why" not "what" the code does
 - Refactor continuously as your understanding of the domain evolves
 
 ### 9.2 Performance Optimization
 
-- Design aggregates with performance in mind (size, loading patterns)
+- Design domain models with performance in mind (size, loading patterns)
 - Use read models and projections for complex queries
 - Consider CQRS for high-performance scenarios
 - Implement domain-specific caching strategies
-- Use asynchronous domain events for non-critical operations
-- Monitor aggregate loading and saving performance
+- Use asynchronous processing for non-critical operations
+- Monitor domain model loading and saving performance
 
 ### 9.3 Documentation
 
-- Maintain a glossary of domain terms (ubiquitous language)
-- Document bounded contexts and their relationships (context map)
-- Create visual representations of aggregates and their relationships
+- Maintain a glossary of domain terms
 - Document architecture decisions (ADRs) with domain context
 - Keep API documentation synchronized with code
-- Include domain event flows and process diagrams
-- Document anti-corruption layers between bounded contexts
+- Include event flows and process diagrams
+- Document the ports and adapters in your architecture
 
 Example of a domain glossary:
 
@@ -1527,7 +1362,7 @@ The process of making an Article publicly visible and available to readers.
 
 ### 10.1 Internationalization and Localization
 
-When implementing internationalization in a DDD context:
+When implementing internationalization in a Hexagonal Architecture context:
 
 - Keep translation concerns in the infrastructure layer
 - Use value objects for locale-sensitive concepts
@@ -1566,14 +1401,14 @@ public class LocalizedContentService {
 
 ### 10.2 Advanced API Design Principles
 
-When designing APIs for DDD-based systems:
+When designing APIs for Hexagonal Architecture-based systems:
 
-- Align API resources with aggregate boundaries
+- Align API resources with domain model boundaries
 - Use hypermedia (HATEOAS) to represent domain relationships
 - Design comprehensive error responses that reflect domain exceptions
 - Version APIs to accommodate domain model evolution
-- Implement consistent naming that reflects the ubiquitous language
-- Consider GraphQL for complex domain queries across aggregates
+- Implement consistent naming that reflects the domain language
+- Consider GraphQL for complex domain queries
 
 ```java
 @RestController
@@ -1599,15 +1434,14 @@ public class ArticleController {
 
 ## Conclusion
 
-These guidelines are designed to ensure quality, maintainability, and robustness for Spring Boot 3.4 applications built using Domain-Driven Design principles. By focusing on the domain model as the core of your application and organizing code around business capabilities, teams can create more maintainable and flexible systems that better align with business needs.
+These guidelines are designed to ensure quality, maintainability, and robustness for Spring Boot 3.4 applications built using Hexagonal Architecture principles. By focusing on a clear separation of concerns through ports and adapters, teams can create more maintainable and flexible systems that better align with business needs.
 
-Remember that DDD is not just about technical patterns but also about collaboration between domain experts and developers to create a shared understanding of the problem domain. The ubiquitous language developed during this collaboration should be reflected in your code, documentation, and discussions.
+Hexagonal Architecture allows your application to be equally driven by users, programs, automated tests, or batch scripts, and to be developed and tested in isolation from its eventual run-time devices and databases. This isolation makes the application more portable, maintainable, and testable.
 
-Teams should adapt these practices to their specific requirements while maintaining the core DDD principles outlined in this document:
+Teams should adapt these practices to their specific requirements while maintaining the core Hexagonal Architecture principles outlined in this document:
 
-- Focus on the core domain and domain logic
-- Base complex designs on models of the domain
-- Collaborate with domain experts to improve the application model
-- Continuously refine the model as the domain evolves
-
-By following these guidelines, you'll be well-positioned to create Spring Boot applications that not only meet technical requirements but also accurately reflect and solve business problems.
+- Keep the domain model at the center of your application
+- Define clear ports (interfaces) for all external interactions
+- Implement adapters that connect to external systems
+- Ensure dependencies always point inward toward the domain
+- Test each layer in isolation
