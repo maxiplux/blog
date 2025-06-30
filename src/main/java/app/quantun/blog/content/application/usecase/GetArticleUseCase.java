@@ -1,0 +1,39 @@
+package app.quantun.blog.content.application;
+
+import app.quantun.blog.content.domain.model.Article;
+import app.quantun.blog.content.domain.model.ArticleId;
+import app.quantun.blog.content.domain.model.Slug;
+import app.quantun.blog.content.domain.repository.ArticleRepository;
+import app.quantun.blog.shared.domain.DomainException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+public class GetArticleUseCase {
+
+    private final ArticleRepository articleRepository;
+    private final ArticleMapper articleMapper;
+
+    @Transactional
+    public ArticleResponse execute(String articleId) {
+        Article article = articleRepository.findById(ArticleId.of(articleId))
+                .orElseThrow(() -> new DomainException("Article not found"));
+
+        return articleMapper.toResponse(article);
+    }
+
+    @Transactional
+    public ArticleResponse executeBySlug(String slug, boolean incrementView) {
+        Article article = articleRepository.findBySlug(new Slug(slug))
+                .orElseThrow(() -> new DomainException("Article not found"));
+
+        if (incrementView && article.isPublished()) {
+            article.incrementViewCount();
+            articleRepository.save(article);
+        }
+
+        return articleMapper.toResponse(article);
+    }
+}
