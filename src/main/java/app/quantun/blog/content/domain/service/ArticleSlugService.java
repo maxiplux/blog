@@ -1,4 +1,4 @@
-package app.quantun.blog.content;
+package app.quantun.blog.content.domain.service;
 
 import app.quantun.blog.content.domain.model.Slug;
 import app.quantun.blog.content.domain.model.Title;

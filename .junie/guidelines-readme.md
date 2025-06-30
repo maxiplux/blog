@@ -1,265 +1,974 @@
-# Spring Boot 3.4 Best Practices Guidelines
+# Spring Boot 3.4 Best Practices Guidelines with Domain-Driven Design
 
 ## Table of Contents
 
 1. [Introduction](#introduction)
-2. [Architecture Style](#1-architecture-style)
-    1. [Layered Architecture](#11-adopt-a-layered-architecture)
-    2. [Service-Oriented Structure](#12-service-oriented-structure)
-    3. [Configuration Management](#13-configuration-management)
+2. [Domain-Driven Design Architecture](#1-domain-driven-design-architecture)
+    1. [Strategic Design](#11-strategic-design)
+    2. [Tactical Design Patterns](#12-tactical-design-patterns)
+    3. [Hexagonal Architecture](#13-hexagonal-architecture)
     4. [Directory Structure](#14-directory-structure)
-3. [Controllers](#2-controllers)
-    1. [REST Controllers Best Practices](#21-rest-controllers-best-practices)
-    2. [Request/Response Objects](#22-requestresponse-objects)
-    3. [Exception Handling](#23-exception-handling)
-4. [Testing](#3-testing)
-    1. [Test Framework Requirements](#31-test-framework-requirements)
-    2. [Working with MockBean](#32-working-with-mockbean)
-    3. [Unit Testing vs Integration Testing](#33-unit-testing-with-mock-vs-integration-testing-with-mockitobean)
-    4. [Testing Controller Layers](#34-testing-controller-layers-with-mockmvc-and-mockbean)
-    5. [Testing with Slices](#35-testing-with-slices-and-mockbean)
-5. [Libraries and Dependencies](#4-libraries-and-dependencies)
-    1. [Core Libraries](#41-core-libraries)
-    2. [Database](#42-database)
-    3. [Logging](#43-logging)
-    4. [API Documentation](#44-api-documentation)
-    5. [HTTP Client with RestClient](#45-http-client-with-restclient)
-6. [Common Pitfalls and Gotchas](#5-common-pitfalls-and-gotchas)
-    1. [Frequent Mistakes to Avoid](#51-frequent-mistakes-to-avoid)
-    2. [Edge Cases to Consider](#52-edge-cases-to-consider)
-    3. [Version Compatibility](#53-version-compatibility)
-    4. [Anti-Patterns to Avoid](#54-anti-patterns-to-avoid)
-7. [Performance Optimization Techniques](#6-performance-optimization-techniques)
-    1. [Database Query Optimization](#61-database-query-optimization)
-    2. [Caching](#62-caching)
-    3. [Asynchronous Processing](#63-asynchronous-processing)
-    4. [Pagination](#64-pagination)
-    5. [Load Testing](#65-load-testing)
-8. [Development Environment and Tooling](#7-development-environment-and-tooling)
-    1. [Recommended Tools](#71-recommended-tools)
-    2. [Code Quality Tools](#72-code-quality-tools)
-9. [General Best Practices](#8-general-best-practices)
-    1. [Code Quality](#81-code-quality)
-    2. [Performance Optimization](#82-performance-optimization)
-    3. [Documentation](#83-documentation)
-10. [Additional Considerations](#9-additional-considerations)
-    1. [Internationalization and Localization](#91-internationalization-and-localization)
-    2. [Advanced API Design Principles](#92-advanced-api-design-principles)
+3. [Application Layer](#2-application-layer)
+    1. [Use Cases](#21-use-cases)
+    2. [Application Services](#22-application-services)
+    3. [Domain Event Handling](#23-domain-event-handling)
+4. [Infrastructure Layer](#3-infrastructure-layer)
+    1. [REST Controllers](#31-rest-controllers)
+    2. [Request/Response Objects](#32-requestresponse-objects)
+    3. [Exception Handling](#33-exception-handling)
+    4. [Persistence Implementations](#34-persistence-implementations)
+5. [Testing in DDD](#4-testing-in-ddd)
+    1. [Domain Model Testing](#41-domain-model-testing)
+    2. [Use Case Testing](#42-use-case-testing)
+    3. [Infrastructure Testing](#43-infrastructure-testing)
+    4. [Working with MockBean](#44-working-with-mockbean)
+    5. [Testing with Slices](#45-testing-with-slices-and-mockbean)
+6. [Libraries and Dependencies](#5-libraries-and-dependencies)
+    1. [Core Libraries](#51-core-libraries)
+    2. [Database](#52-database)
+    3. [Logging](#53-logging)
+    4. [API Documentation](#54-api-documentation)
+    5. [HTTP Client with RestClient](#55-http-client-with-restclient)
+7. [Common Pitfalls and Gotchas](#6-common-pitfalls-and-gotchas)
+    1. [DDD-Specific Challenges](#61-ddd-specific-challenges)
+    2. [Edge Cases to Consider](#62-edge-cases-to-consider)
+    3. [Version Compatibility](#63-version-compatibility)
+    4. [Anti-Patterns to Avoid](#64-anti-patterns-to-avoid)
+8. [Performance Optimization Techniques](#7-performance-optimization-techniques)
+    1. [Database Query Optimization](#71-database-query-optimization)
+    2. [Caching](#72-caching)
+    3. [Asynchronous Processing](#73-asynchronous-processing)
+    4. [Pagination](#74-pagination)
+    5. [Load Testing](#75-load-testing)
+9. [Development Environment and Tooling](#8-development-environment-and-tooling)
+    1. [Recommended Tools](#81-recommended-tools)
+    2. [Code Quality Tools](#82-code-quality-tools)
+10. [General Best Practices](#9-general-best-practices)
+    1. [Code Quality](#91-code-quality)
+    2. [Performance Optimization](#92-performance-optimization)
+    3. [Documentation](#93-documentation)
+11. [Additional Considerations](#10-additional-considerations)
+    1. [Internationalization and Localization](#101-internationalization-and-localization)
+    2. [Advanced API Design Principles](#102-advanced-api-design-principles)
 
 ## Introduction
 
 This document outlines the architecture, development, and testing guidelines for applications built with Spring Boot
 3.4. Following these practices will help ensure scalable, maintainable, and robust applications.
 
-## 1. Architecture Style
+## 1. Domain-Driven Design Architecture
 
-### 1.1 Adopt a Layered Architecture
+### 1.1 Strategic Design
 
-Implement a clear layered architecture:
+Domain-Driven Design (DDD) starts with strategic design to understand and model the business domain:
 
-- **Presentation Layer**: Controllers, View Templates, REST endpoints
-- **Service Layer**: Business logic, transaction management
-- **Data Access Layer**: Repositories, data source configurations
-- **Domain Layer**: Entity models, value objects
+- **Ubiquitous Language**: Establish a common language between developers and domain experts
+- **Bounded Contexts**: Define clear boundaries for different domain models
+- **Context Mapping**: Document relationships between bounded contexts
+- **Core Domain**: Identify and focus on the most valuable part of your application
+- **Subdomains**: Divide the domain into manageable parts (Core, Supporting, Generic)
 
-### 1.2 Service-Oriented Structure
+Example of a context map for an e-commerce application:
 
-- Group related functionality into cohesive services
-- Design services around business capabilities
-- Ensure loose coupling between services
-- Implement proper error handling and retry mechanisms
-- Use interface contracts for service definitions
+```
++------------------------+       +------------------------+
+|  Product Catalog       |       |  Order Management      |
+|  -----------------     |       |  -----------------     |
+|  - Products            |<----->|  - Orders              |
+|  - Categories          |       |  - Order Items         |
+|  - Product Reviews     |       |  - Shipping            |
++------------------------+       +------------------------+
+           ^                               ^
+           |                               |
+           v                               v
++------------------------+       +------------------------+
+|  Customer Management   |       |  Payment Processing    |
+|  -----------------     |<----->|  -----------------     |
+|  - Customers           |       |  - Payments            |
+|  - Addresses           |       |  - Refunds             |
+|  - Preferences         |       |  - Payment Methods     |
++------------------------+       +------------------------+
+```
 
-### 1.3 Configuration Management
+### 1.2 Tactical Design Patterns
 
-- Externalize configuration using Spring's `@ConfigurationProperties`
-- Use profiles for environment-specific configurations
-- Leverage Spring Cloud Config for centralized configuration in multi-service environments
-- Sensitive configuration should be handled using Spring Boot's secret management or external vaults
+Implement these tactical patterns to create a rich domain model:
+
+- **Entities**: Objects with identity that changes over time
+  ```java
+  public class Customer extends AggregateRoot {
+      private CustomerId id;
+      private String name;
+      private Email email;
+      // Business methods that enforce invariants
+  }
+  ```
+
+- **Value Objects**: Immutable objects defined by their attributes
+  ```java
+  public class Email extends ValueObject {
+      private final String address;
+
+      public Email(String address) {
+          if (!isValid(address)) {
+              throw new DomainException("Invalid email format");
+          }
+          this.address = address;
+      }
+
+      private boolean isValid(String email) {
+          // Validation logic
+          return email != null && email.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$");
+      }
+  }
+  ```
+
+- **Aggregates**: Cluster of entities and value objects with a root entity
+  ```java
+  public class Order extends AggregateRoot {
+      private OrderId id;
+      private CustomerId customerId;
+      private Set<OrderItem> items;
+      private OrderStatus status;
+
+      public void addItem(Product product, int quantity) {
+          // Business logic with invariant enforcement
+          if (status != OrderStatus.DRAFT) {
+              throw new DomainException("Cannot modify a non-draft order");
+          }
+          items.add(new OrderItem(product.getId(), quantity, product.getPrice()));
+      }
+
+      public void submit() {
+          if (items.isEmpty()) {
+              throw new DomainException("Cannot submit an empty order");
+          }
+          status = OrderStatus.SUBMITTED;
+      }
+  }
+  ```
+
+- **Domain Services**: Operations that don't belong to a specific entity
+  ```java
+  public class OrderPricingService {
+      public Money calculateTotalPrice(Order order, TaxRules taxRules) {
+          // Complex pricing logic involving multiple entities
+      }
+  }
+  ```
+
+- **Domain Events**: Record of something significant that happened in the domain
+  ```java
+  public class OrderSubmittedEvent extends DomainEvent {
+      private final OrderId orderId;
+      private final CustomerId customerId;
+
+      public OrderSubmittedEvent(OrderId orderId, CustomerId customerId) {
+          super();
+          this.orderId = orderId;
+          this.customerId = customerId;
+      }
+  }
+  ```
+
+- **Repositories**: Abstraction for persistence operations
+  ```java
+  public interface OrderRepository {
+      Order findById(OrderId id);
+      void save(Order order);
+      List<Order> findByCustomerId(CustomerId customerId);
+  }
+  ```
+
+### 1.3 Hexagonal Architecture
+
+Implement a hexagonal architecture (ports and adapters) to separate domain logic from external concerns:
+
+- **Domain Layer**: Core business logic, entities, value objects, domain services
+- **Application Layer**: Use cases, application services, orchestration
+- **Infrastructure Layer**: Adapters for external systems, persistence, UI, messaging
+
+```
++------------------------------------------+
+|                                          |
+|  +----------------------------------+    |
+|  |                                  |    |
+|  |        Domain Layer              |    |
+|  |  (Entities, Value Objects,       |    |
+|  |   Aggregates, Domain Services)   |    |
+|  |                                  |    |
+|  +----------------------------------+    |
+|                   ^                      |
+|                   |                      |
+|  +----------------------------------+    |
+|  |                                  |    |
+|  |       Application Layer          |    |
+|  |  (Use Cases, Application         |    |
+|  |   Services, Domain Events)       |    |
+|  |                                  |    |
+|  +----------------------------------+    |
+|                   ^                      |
+|                   |                      |
+|  +----------------------------------+    |
+|  |                                  |    |
+|  |      Infrastructure Layer        |    |
+|  |  (Controllers, Repositories,     |    |
+|  |   External Services Adapters)    |    |
+|  |                                  |    |
+|  +----------------------------------+    |
+|                                          |
++------------------------------------------+
+```
 
 ### 1.4 Directory Structure
 
-Follow a consistent directory structure to improve maintainability:
+Follow a DDD-oriented directory structure to reflect bounded contexts and layers:
 
 ```
 src/
  ├── main/
  │   ├── java/
- │   │   └── com/example/app/
+ │   │   └── app/quantun/blog/
  │   │       ├── Application.java (Main entry point)
- │   │       ├── config/          (Configuration classes)
- │   │       ├── controller/      (REST controllers)
- │   │       ├── service/         (Business logic services)
- │   │       ├── repository/      (Data access repositories)
- │   │       ├── model/           (Entities) 
- │   │       ├── model/contract/
- │   │       │   ├── response/    (DTOs for responses)
- │   │       │   ├── request/     (DTOs for requests)
- │   │       │   └── dto/         (DTOs for internal use)
- │   │       ├── exception/       (Custom exceptions)
- │   │       └── util/            (Utility classes)
+ │   │       ├── shared/
+ │   │       │   ├── domain/
+ │   │       │   │   ├── AggregateRoot.java
+ │   │       │   │   ├── ValueObject.java
+ │   │       │   │   └── DomainException.java
+ │   │       │   └── infrastructure/
+ │   │       │       ├── config/
+ │   │       │       └── security/
+ │   │       ├── content/              (Bounded Context)
+ │   │       │   ├── domain/
+ │   │       │   │   ├── model/        (Entities, Value Objects)
+ │   │       │   │   │   ├── Article.java
+ │   │       │   │   │   ├── ArticleId.java
+ │   │       │   │   │   └── Content.java
+ │   │       │   │   ├── repository/   (Repository interfaces)
+ │   │       │   │   │   └── ArticleRepository.java
+ │   │       │   │   └── service/      (Domain Services)
+ │   │       │   │       └── ArticleValidationService.java
+ │   │       │   ├── application/
+ │   │       │   │   ├── usecase/      (Use Cases)
+ │   │       │   │   │   ├── CreateArticleUseCase.java
+ │   │       │   │   │   └── PublishArticleUseCase.java
+ │   │       │   │   └── ArticleMapper.java
+ │   │       │   ├── infrastructure/
+ │   │       │   │   ├── persistence/  (Repository implementations)
+ │   │       │   │   │   └── MongoArticleRepository.java
+ │   │       │   │   └── web/          (Controllers)
+ │   │       │   │       └── ArticleController.java
+ │   │       │   └── dto/              (Data Transfer Objects)
+ │   │       │       ├── ArticleResponse.java
+ │   │       │       └── CreateArticleRequest.java
+ │   │       └── user/                 (Another Bounded Context)
+ │   │           ├── domain/
+ │   │           ├── application/
+ │   │           ├── infrastructure/
+ │   │           └── dto/
  │   └── resources/
  │       ├── application.properties or application.yml
  │       ├── static/            (Static resources)
  │       └── templates/         (View templates)
  └── test/
      ├── java/
-     │   └── com/example/app/
-     │       ├── controller/      (Controller tests)
-     │       ├── service/         (Service tests)
-     │       └── repository/      (Repository tests)
+     │   └── app/quantun/blog/
+     │       ├── content/
+     │       │   ├── domain/    (Domain tests)
+     │       │   ├── application/ (Use case tests)
+     │       │   └── infrastructure/ (Controller/Repository tests)
+     │       └── user/
      └── resources/
          └── application-test.properties or application-test.yml
 ```
 
-- **Root Package**: Use a meaningful root package name (e.g., `app.quantun.eb2c`)
-- **Modularization**: For larger applications, consider breaking down the application into modules based on business
-  domains
+Key principles for DDD directory structure:
 
-## 2. Controllers
+- **Bounded Context Separation**: Organize code by business domains
+- **Layer Separation**: Clearly separate domain, application, and infrastructure layers
+- **Domain Model Isolation**: Keep domain model free from infrastructure concerns
+- **Shared Kernel**: Common code shared between bounded contexts goes in `shared` package
 
-### 2.1 REST Controllers Best Practices
+## 2. Application Layer
 
-- Follow REST principles for resource naming and HTTP methods
-- Use proper HTTP status codes for different scenarios
-- Implement versioning strategy (URI path, request parameters, or headers)
-- Keep controllers thin, delegate business logic to services
-- Document APIs using OpenAPI (Springdoc)
+The application layer orchestrates the flow of domain objects to accomplish specific use cases. It acts as a thin layer between the domain and infrastructure.
+
+### 2.1 Use Cases
+
+Use cases represent specific business operations or user interactions:
+
+- Implement one class per use case following the Single Responsibility Principle
+- Focus on orchestration rather than business logic
+- Use domain services and repositories to accomplish tasks
+- Return DTOs rather than domain objects
 
 ```java
-@RestController
-@RequestMapping("/api/v1/users")
+@Service
+@RequiredArgsConstructor
 @Slf4j
-public class UserController {
-    private final UserService userService;
-    
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
-    
-    @GetMapping("/{id}")
-    public ResponseEntity<UserDto> getUser(@PathVariable Long id) {
-        log.info("Retrieving user with id: {}", id);
-        return userService.findById(id)
-            .map(ResponseEntity::ok)
-            .orElse(ResponseEntity.notFound().build());
+public class CreateArticleUseCase {
+    private final ArticleRepository articleRepository;
+    private final ArticleSlugService slugService;
+    private final ArticleMapper mapper;
+
+    @Transactional
+    public ArticleResponse execute(CreateArticleRequest request, String authorId) {
+        log.info("Creating new article with title: {}", request.getTitle());
+
+        // Create domain objects
+        Title title = new Title(request.getTitle());
+        Content content = new Content(request.getContent());
+        AuthorId owner = new AuthorId(authorId);
+        ArticleId articleId = new ArticleId(UUID.randomUUID().toString());
+
+        // Generate slug using domain service
+        Slug slug = slugService.generateUniqueSlug(title);
+
+        // Create aggregate using factory method
+        Article article = Article.create(articleId, title, content, owner);
+
+        // Add tags if provided
+        if (request.getTags() != null) {
+            request.getTags().forEach(article::addTag);
+        }
+
+        // Persist through repository
+        Article savedArticle = articleRepository.save(article);
+
+        // Map to response DTO
+        return mapper.toArticleResponse(savedArticle);
     }
 }
 ```
 
-### 2.2 Request/Response Objects
+Key principles for use cases:
+
+- **Input Validation**: Validate input at the boundary
+- **Transaction Management**: Handle transactions at this level
+- **Error Handling**: Translate domain exceptions to application exceptions
+- **Logging**: Log the beginning and end of use case execution
+- **Authorization**: Verify user permissions before executing domain logic
+
+### 2.2 Application Services
+
+Application services coordinate multiple use cases or provide cross-cutting functionality:
+
+```java
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class ArticleManagementService {
+    private final CreateArticleUseCase createArticleUseCase;
+    private final UpdateArticleUseCase updateArticleUseCase;
+    private final PublishArticleUseCase publishArticleUseCase;
+    private final GetArticleUseCase getArticleUseCase;
+
+    public ArticleResponse createDraftArticle(CreateArticleRequest request, String authorId) {
+        log.info("Creating draft article for author: {}", authorId);
+        return createArticleUseCase.execute(request, authorId);
+    }
+
+    public ArticleResponse createAndPublishArticle(CreateArticleRequest request, String authorId) {
+        log.info("Creating and publishing article for author: {}", authorId);
+        ArticleResponse draftArticle = createArticleUseCase.execute(request, authorId);
+        return publishArticleUseCase.execute(draftArticle.getId(), authorId);
+    }
+
+    public ArticleResponse updateAndPublishIfReady(String articleId, UpdateArticleRequest request, String authorId) {
+        log.info("Updating article: {} and publishing if ready", articleId);
+        ArticleResponse updatedArticle = updateArticleUseCase.execute(articleId, request, authorId);
+
+        // Check if article meets publishing criteria
+        if (request.isPublishAfterUpdate() && isReadyToPublish(updatedArticle)) {
+            return publishArticleUseCase.execute(articleId, authorId);
+        }
+
+        return updatedArticle;
+    }
+
+    private boolean isReadyToPublish(ArticleResponse article) {
+        // Application-level validation logic
+        return article.getContent().split("\\s+").length >= 50 && !article.getTags().isEmpty();
+    }
+}
+```
+
+### 2.3 Domain Event Handling
+
+Domain events allow for loose coupling between different parts of the application:
+
+```java
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class ArticleEventHandler {
+    private final NotificationService notificationService;
+    private final SearchIndexService searchIndexService;
+
+    @EventListener
+    public void handleArticlePublishedEvent(ArticlePublishedEvent event) {
+        log.info("Handling article published event for article: {}", event.getArticleId());
+
+        // Notify followers
+        notificationService.notifyFollowers(event.getAuthorId(), 
+            "New article published", 
+            "Check out the new article: " + event.getTitle());
+
+        // Index for search
+        searchIndexService.indexArticle(event.getArticleId(), event.getTitle(), event.getContent());
+    }
+
+    @EventListener
+    public void handleArticleUpdatedEvent(ArticleUpdatedEvent event) {
+        log.info("Handling article updated event for article: {}", event.getArticleId());
+
+        // Update search index
+        if (event.isPublished()) {
+            searchIndexService.updateArticleIndex(event.getArticleId(), event.getTitle(), event.getContent());
+        }
+    }
+}
+```
+
+Domain event implementation:
+
+```java
+@Component
+@RequiredArgsConstructor
+public class DomainEventPublisher {
+    private final ApplicationEventPublisher eventPublisher;
+
+    public void publish(Object event) {
+        eventPublisher.publishEvent(event);
+    }
+}
+
+public class ArticlePublishedEvent {
+    private final String articleId;
+    private final String authorId;
+    private final String title;
+    private final String content;
+    private final LocalDateTime publishedAt;
+
+    // Constructor and getters
+}
+```
+
+## 3. Infrastructure Layer
+
+The infrastructure layer implements technical capabilities that support the higher layers, providing implementations for the interfaces defined in the domain and application layers.
+
+### 3.1 REST Controllers
+
+Controllers in DDD serve as adapters between the HTTP interface and the application layer:
+
+- Keep controllers thin, focusing only on HTTP concerns
+- Delegate all business logic to application use cases
+- Map HTTP requests to application layer DTOs
+- Handle HTTP-specific concerns (status codes, headers, etc.)
+
+```java
+@RestController
+@RequestMapping("/api/v1/articles")
+@RequiredArgsConstructor
+@Slf4j
+public class ArticleController {
+    private final CreateArticleUseCase createArticleUseCase;
+    private final GetArticleUseCase getArticleUseCase;
+    private final UpdateArticleUseCase updateArticleUseCase;
+    private final PublishArticleUseCase publishArticleUseCase;
+    private final ListArticlesUseCase listArticlesUseCase;
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public ArticleResponse createArticle(
+            @Valid @RequestBody CreateArticleRequest request,
+            @RequestHeader("X-User-ID") String userId) {
+        log.info("Received request to create article from user: {}", userId);
+        return createArticleUseCase.execute(request, userId);
+    }
+
+    @GetMapping("/{id}")
+    public ArticleResponse getArticleById(@PathVariable String id) {
+        log.info("Retrieving article with id: {}", id);
+        return getArticleUseCase.executeById(id);
+    }
+
+    @GetMapping("/slug/{slug}")
+    public ArticleResponse getArticleBySlug(@PathVariable String slug) {
+        log.info("Retrieving article with slug: {}", slug);
+        return getArticleUseCase.executeBySlug(slug);
+    }
+
+    @PutMapping("/{id}")
+    public ArticleResponse updateArticle(
+            @PathVariable String id,
+            @Valid @RequestBody UpdateArticleRequest request,
+            @RequestHeader("X-User-ID") String userId) {
+        log.info("Updating article with id: {}", id);
+        return updateArticleUseCase.execute(id, request, userId);
+    }
+
+    @PostMapping("/{id}/publish")
+    public ArticleResponse publishArticle(
+            @PathVariable String id,
+            @RequestHeader("X-User-ID") String userId) {
+        log.info("Publishing article with id: {}", id);
+        return publishArticleUseCase.execute(id, userId);
+    }
+
+    @GetMapping
+    public Page<ArticleSummaryResponse> listArticles(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String tag) {
+        log.info("Listing articles page: {}, size: {}, tag: {}", page, size, tag);
+        return listArticlesUseCase.execute(page, size, tag);
+    }
+}
+```
+
+### 3.2 Request/Response Objects
+
+DTOs serve as the contract between the client and the application:
 
 - Use dedicated DTOs for request and response objects
 - Implement input validation using Bean Validation (JSR-380)
-- Create specific response models instead of returning entity objects directly
+- Keep DTOs simple and focused on data transfer
 - Use Jackson annotations for JSON customization when needed
 
 ```java
 @Data
 @Builder
-public class UserCreationRequest {
-    @NotBlank(message = "Name is required")
-    private String name;
-    
-    @Email(message = "Valid email is required")
-    private String email;
-    
-    @Size(min = 8, message = "Password must be at least 8 characters")
-    private String password;
+@NoArgsConstructor
+@AllArgsConstructor
+public class CreateArticleRequest {
+    @NotBlank(message = "Title is required")
+    @Size(min = 5, max = 100, message = "Title must be between 5 and 100 characters")
+    private String title;
+
+    @NotBlank(message = "Content is required")
+    @Size(min = 50, message = "Content must be at least 50 characters")
+    private String content;
+
+    private Set<String> tags;
 }
 
-// Example of creating an object using the builder pattern
-UserCreationRequest request = UserCreationRequest.builder()
-    .name("John Doe")
-    .email("john@example.com")
-    .password("securePassword123")
-    .build();
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class ArticleResponse {
+    private String id;
+    private String title;
+    private String slug;
+    private String content;
+    private String authorId;
+    private String status;
+    private Set<String> tags;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private LocalDateTime publishedAt;
+    private int viewCount;
+}
 ```
 
-### 2.3 Exception Handling
+### 3.3 Exception Handling
 
-- Implement a global exception handler using `@ControllerAdvice`
-- Create custom exceptions for different error scenarios
-- Return consistent error responses with appropriate HTTP status codes
-- Include meaningful error messages that are safe to expose
+Implement a global exception handler to translate domain and application exceptions to HTTP responses:
 
 ```java
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
-    
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex) {
-        log.error("Resource not found: {}", ex.getMessage());
-        ErrorResponse error = new ErrorResponse("RESOURCE_NOT_FOUND", ex.getMessage());
-        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+
+    @ExceptionHandler(DomainException.class)
+    public ProblemDetail handleDomainException(DomainException ex) {
+        log.warn("Domain exception: {}", ex.getMessage());
+
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+            HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setTitle("Domain Rule Violation");
+        problem.setProperty("errorCategory", "DOMAIN_RULE_VIOLATION");
+        problem.setProperty("timestamp", LocalDateTime.now());
+
+        return problem;
     }
-    
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        log.error("Validation failed: {}", ex.getMessage());
+    public ProblemDetail handleValidationExceptions(MethodArgumentNotValidException ex) {
+        log.warn("Validation failed: {}", ex.getMessage());
+
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(error -> 
             errors.put(error.getField(), error.getDefaultMessage()));
-        
-        ErrorResponse errorResponse = new ErrorResponse("VALIDATION_FAILED", "Validation failed", errors);
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+            HttpStatus.BAD_REQUEST, "Validation failed");
+        problem.setTitle("Validation Error");
+        problem.setProperty("errors", errors);
+        problem.setProperty("errorCategory", "VALIDATION_ERROR");
+        problem.setProperty("timestamp", LocalDateTime.now());
+
+        return problem;
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ProblemDetail handleGenericException(Exception ex) {
+        log.error("Unhandled exception", ex);
+
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+            HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
+        problem.setTitle("Internal Server Error");
+        problem.setProperty("errorCategory", "SYSTEM_ERROR");
+        problem.setProperty("timestamp", LocalDateTime.now());
+
+        return problem;
     }
 }
 ```
 
-## 3. Testing
+### 3.4 Persistence Implementations
 
-### 3.1 Test Framework Requirements
-
-- **JUnit 5**: All tests MUST use JUnit 5 (Jupiter) as the testing framework
-- **Mockito**: Use Mockito for mocking dependencies
-- **Spring Boot Test**: Leverage Spring Boot's testing utilities
-- **AssertJ**: Preferred for fluent assertions
-
-Follow the test pyramid approach:
-
-- **Unit Tests**: Most numerous, test individual components in isolation
-- **Integration Tests**: Test interactions between components
-- **End-to-End Tests**: Fewer tests covering critical business flows
-
-### 3.2 Working with MockBean
-
-`@MockBean` is a Spring Boot test annotation that adds Mockito mocks to the Spring ApplicationContext. It's essential
-for proper Spring Boot integration testing:
+Repository implementations connect the domain model to the database:
 
 ```java
-@SpringBootTest
-class UserServiceIntegrationTest {
-    
-    // Replace real bean with a mock in Spring context
-    @MockBean
-    private UserRepository userRepository;
-    
-    @Autowired
-    private UserService userService;
-    
+@Repository
+@RequiredArgsConstructor
+@Slf4j
+public class ArticleRepositoryImpl implements ArticleRepository {
+    private final MongoArticleRepository mongoRepository;
+
+    @Override
+    public Article save(Article article) {
+        log.debug("Saving article with ID: {}", article.getArticleId().getValue());
+        return mongoRepository.save(article);
+    }
+
+    @Override
+    public Optional<Article> findById(ArticleId id) {
+        log.debug("Finding article by ID: {}", id.getValue());
+        return mongoRepository.findById(id.getValue());
+    }
+
+    @Override
+    public Optional<Article> findBySlug(Slug slug) {
+        log.debug("Finding article by slug: {}", slug.getValue());
+        return mongoRepository.findBySlug(slug.getValue());
+    }
+
+    @Override
+    public Page<Article> findPublishedArticles(int page, int size) {
+        log.debug("Finding published articles page: {}, size: {}", page, size);
+        return mongoRepository.findByStatus(
+            ArticleStatus.PUBLISHED, 
+            PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "publishedAt"))
+        );
+    }
+
+    @Override
+    public Page<Article> findPublishedArticlesByTag(String tag, int page, int size) {
+        log.debug("Finding published articles with tag: {}, page: {}, size: {}", tag, page, size);
+        return mongoRepository.findByStatusAndTagsContaining(
+            ArticleStatus.PUBLISHED,
+            tag.toLowerCase(),
+            PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "publishedAt"))
+        );
+    }
+
+    @Override
+    public boolean existsBySlug(Slug slug) {
+        log.debug("Checking if article exists with slug: {}", slug.getValue());
+        return mongoRepository.existsBySlug(slug.getValue());
+    }
+}
+```
+
+Spring Data repository interface:
+
+```java
+public interface MongoArticleRepository extends MongoRepository<Article, String> {
+    Optional<Article> findBySlug(String slug);
+
+    Page<Article> findByStatus(ArticleStatus status, Pageable pageable);
+
+    Page<Article> findByStatusAndTagsContaining(ArticleStatus status, String tag, Pageable pageable);
+
+    boolean existsBySlug(String slug);
+}
+```
+
+## 4. Testing in DDD
+
+Testing in Domain-Driven Design requires a strategic approach that respects the layered architecture and focuses on testing business rules and behaviors at the appropriate level.
+
+### 4.1 Domain Model Testing
+
+Domain model tests focus on the business rules and invariants of your domain objects:
+
+- Test domain entities, value objects, and aggregates in isolation
+- Focus on business rules and invariants
+- Use simple unit tests without frameworks when possible
+- Test domain services with their collaborators mocked
+
+```java
+@ExtendWith(MockitoExtension.class)
+class ArticleTest {
+
     @Test
-    @DisplayName("Should return user when repository finds one")
-    void shouldReturnUser_whenRepositoryFindsOne() {
+    @DisplayName("Should create article in draft status")
+    void shouldCreateArticleInDraftStatus() {
         // Arrange
-        User mockUser = User.builder()
-            .id(1L)
-            .name("Test User")
-            .email("test@example.com")
-            .build();
-            
-        when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
-        
+        ArticleId id = new ArticleId("123");
+        Title title = new Title("Test Article");
+        Content content = new Content("This is a test article content");
+        AuthorId authorId = new AuthorId("author-1");
+
         // Act
-        Optional<UserDto> result = userService.findById(1L);
-        
+        Article article = Article.create(id, title, content, authorId);
+
         // Assert
-        assertThat(result).isPresent();
-        assertThat(result.get().getName()).isEqualTo("Test User");
-        
-        // Verify mock interactions
-        verify(userRepository).findById(1L);
+        assertThat(article.getArticleId()).isEqualTo(id);
+        assertThat(article.getTitle()).isEqualTo(title);
+        assertThat(article.getContent()).isEqualTo(content);
+        assertThat(article.getAuthorId()).isEqualTo(authorId);
+        assertThat(article.getStatus()).isEqualTo(ArticleStatus.DRAFT);
+        assertThat(article.getTags()).isEmpty();
+        assertThat(article.getViewCount()).isZero();
+        assertThat(article.getPublishedAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("Should throw exception when updating title of published article")
+    void shouldThrowException_whenUpdatingTitleOfPublishedArticle() {
+        // Arrange
+        Article article = createPublishedArticle();
+        Title newTitle = new Title("Updated Title");
+
+        // Act & Assert
+        assertThatThrownBy(() -> article.updateTitle(newTitle))
+            .isInstanceOf(DomainException.class)
+            .hasMessage("Cannot update title of published article");
+    }
+
+    @Test
+    @DisplayName("Should add tag to article")
+    void shouldAddTagToArticle() {
+        // Arrange
+        Article article = createDraftArticle();
+
+        // Act
+        article.addTag("java");
+        article.addTag("spring");
+
+        // Assert
+        assertThat(article.getTags()).containsExactlyInAnyOrder("java", "spring");
+    }
+
+    private Article createDraftArticle() {
+        return Article.create(
+            new ArticleId("123"),
+            new Title("Test Article"),
+            new Content("This is a test article content"),
+            new AuthorId("author-1")
+        );
+    }
+
+    private Article createPublishedArticle() {
+        Article article = createDraftArticle();
+        article.publish();
+        return article;
+    }
+}
+```
+
+### 4.2 Use Case Testing
+
+Use case tests verify that application services correctly orchestrate domain objects:
+
+- Mock repositories and domain services
+- Focus on the orchestration flow
+- Verify that domain objects are used correctly
+- Test error handling and edge cases
+
+```java
+@ExtendWith(MockitoExtension.class)
+class CreateArticleUseCaseTest {
+
+    @Mock
+    private ArticleRepository articleRepository;
+
+    @Mock
+    private ArticleSlugService slugService;
+
+    @Mock
+    private ArticleMapper mapper;
+
+    @InjectMocks
+    private CreateArticleUseCase useCase;
+
+    @Test
+    @DisplayName("Should create article successfully")
+    void shouldCreateArticleSuccessfully() {
+        // Arrange
+        CreateArticleRequest request = new CreateArticleRequest();
+        request.setTitle("Test Article");
+        request.setContent("This is a test article with sufficient content for testing purposes");
+        request.setTags(Set.of("test", "article"));
+
+        String authorId = "author-1";
+
+        // Capture the article being saved
+        ArgumentCaptor<Article> articleCaptor = ArgumentCaptor.forClass(Article.class);
+
+        // Mock slug service
+        when(slugService.generateUniqueSlug(any(Title.class))).thenReturn(new Slug("test-article"));
+
+        // Mock repository
+        when(articleRepository.save(articleCaptor.capture())).thenAnswer(i -> i.getArgument(0));
+
+        // Mock mapper
+        ArticleResponse expectedResponse = new ArticleResponse();
+        expectedResponse.setId("123");
+        expectedResponse.setTitle("Test Article");
+        when(mapper.toArticleResponse(any(Article.class))).thenReturn(expectedResponse);
+
+        // Act
+        ArticleResponse result = useCase.execute(request, authorId);
+
+        // Assert
+        assertThat(result).isEqualTo(expectedResponse);
+
+        // Verify the article properties
+        Article savedArticle = articleCaptor.getValue();
+        assertThat(savedArticle.getTitle().getValue()).isEqualTo("Test Article");
+        assertThat(savedArticle.getContent().getValue()).isEqualTo(request.getContent());
+        assertThat(savedArticle.getAuthorId().getValue()).isEqualTo(authorId);
+        assertThat(savedArticle.getStatus()).isEqualTo(ArticleStatus.DRAFT);
+        assertThat(savedArticle.getTags()).containsExactlyInAnyOrder("test", "article");
+
+        // Verify interactions
+        verify(slugService).generateUniqueSlug(any(Title.class));
+        verify(articleRepository).save(any(Article.class));
+        verify(mapper).toArticleResponse(any(Article.class));
+    }
+}
+```
+
+### 4.3 Infrastructure Testing
+
+Infrastructure tests verify that adapters correctly implement interfaces defined in the domain:
+
+- Test repository implementations with real or in-memory databases
+- Test controllers with MockMvc
+- Focus on the mapping between domain and external systems
+- Use Spring Boot test slices to isolate components
+
+```java
+@DataMongoTest
+class ArticleRepositoryImplTest {
+
+    @Autowired
+    private MongoTemplate mongoTemplate;
+
+    @Autowired
+    private MongoArticleRepository mongoRepository;
+
+    private ArticleRepositoryImpl repository;
+
+    @BeforeEach
+    void setUp() {
+        repository = new ArticleRepositoryImpl(mongoRepository);
+        mongoTemplate.dropCollection(Article.class);
+    }
+
+    @Test
+    @DisplayName("Should save and retrieve article by ID")
+    void shouldSaveAndRetrieveArticleById() {
+        // Arrange
+        Article article = createArticle();
+
+        // Act
+        Article savedArticle = repository.save(article);
+        Optional<Article> foundArticle = repository.findById(article.getArticleId());
+
+        // Assert
+        assertThat(foundArticle).isPresent();
+        assertThat(foundArticle.get().getArticleId()).isEqualTo(article.getArticleId());
+        assertThat(foundArticle.get().getTitle()).isEqualTo(article.getTitle());
+    }
+
+    @Test
+    @DisplayName("Should find article by slug")
+    void shouldFindArticleBySlug() {
+        // Arrange
+        Article article = createArticle();
+        repository.save(article);
+
+        // Act
+        Optional<Article> foundArticle = repository.findBySlug(article.getSlug());
+
+        // Assert
+        assertThat(foundArticle).isPresent();
+        assertThat(foundArticle.get().getSlug()).isEqualTo(article.getSlug());
+    }
+
+    private Article createArticle() {
+        return Article.create(
+            new ArticleId("test-id"),
+            new Title("Test Article"),
+            new Content("Test content for the article"),
+            new AuthorId("author-1")
+        );
+    }
+}
+```
+
+### 4.4 Working with MockBean
+
+`@MockBean` is a Spring Boot test annotation that adds Mockito mocks to the Spring ApplicationContext:
+
+```java
+@WebMvcTest(ArticleController.class)
+class ArticleControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private CreateArticleUseCase createArticleUseCase;
+
+    @MockBean
+    private GetArticleUseCase getArticleUseCase;
+
+    @Test
+    @DisplayName("Should create article and return 201 Created")
+    void shouldCreateArticleAndReturn201Created() throws Exception {
+        // Arrange
+        CreateArticleRequest request = new CreateArticleRequest();
+        request.setTitle("Test Article");
+        request.setContent("This is a test article with sufficient content for testing purposes");
+
+        ArticleResponse response = new ArticleResponse();
+        response.setId("123");
+        response.setTitle("Test Article");
+
+        when(createArticleUseCase.execute(any(), eq("user-1"))).thenReturn(response);
+
+        // Act & Assert
+        mockMvc.perform(post("/api/v1/articles")
+                .header("X-User-ID", "user-1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(request)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id").value("123"))
+            .andExpect(jsonPath("$.title").value("Test Article"));
+
+        verify(createArticleUseCase).execute(any(), eq("user-1"));
+    }
+
+    private String asJsonString(Object obj) throws Exception {
+        return new ObjectMapper().writeValueAsString(obj);
     }
 }
 ```
@@ -272,113 +981,38 @@ class UserServiceIntegrationTest {
 4. **Bean Naming**: `@MockBean` can specify the name of the bean to replace with `name` attribute
 5. **Verification**: Always verify important interactions with the mock
 
-### 3.3 Unit Testing with @Mock vs Integration Testing with @MockBean
-
-```java
-// Unit Testing: Lighter weight, no Spring context
-@ExtendWith(MockitoExtension.class)
-class UserServiceTest {
-    
-    @Mock // Lightweight Mockito mock, no Spring context involved
-    private UserRepository userRepository;
-    
-    @InjectMocks // Manually injects mocks into the class under test
-    private UserServiceImpl userService;
-    
-    @Test
-    @DisplayName("Should create user when given valid data")
-    void shouldCreateUser_whenValidData() {
-        // Test implementation
-    }
-}
-
-// Integration Testing: Full Spring context
-@SpringBootTest
-class UserServiceIntegrationTest {
-    
-    @MockBean // Spring context aware, replaces the real bean
-    private UserRepository userRepository;
-    
-    @Autowired // Injected by Spring with the mock
-    private UserService userService;
-    
-    @Test
-    @DisplayName("Should retrieve user when exists")
-    void shouldRetrieveUser_whenExists() {
-        // Test implementation
-    }
-}
-```
-
-### 3.4 Testing Controller Layers with MockMvc and MockBean
-
-```java
-@WebMvcTest(UserController.class) // Load only the web layer
-class UserControllerTest {
-    
-    @Autowired
-    private MockMvc mockMvc;
-    
-    @MockBean // Mock the service layer
-    private UserService userService;
-    
-    @Test
-    @DisplayName("Should return 200 OK with user when found")
-    void shouldReturnUser_whenFound() throws Exception {
-        // Arrange
-        UserDto mockUser = UserDto.builder()
-            .id(1L)
-            .name("Test User")
-            .email("test@example.com")
-            .build();
-            
-        when(userService.findById(1L)).thenReturn(Optional.of(mockUser));
-        
-        // Act & Assert
-        mockMvc.perform(get("/api/v1/users/{id}", 1L)
-                .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id").value(1L))
-            .andExpect(jsonPath("$.name").value("Test User"))
-            .andDo(print());
-            
-        verify(userService).findById(1L);
-    }
-}
-```
-
-### 3.5 Testing with Slices and MockBean
+### 4.5 Testing with Slices and MockBean
 
 Spring Boot provides test slice annotations to load only specific parts of the application:
 
 ```java
-// Test only JPA repositories
-@DataJpaTest
-class UserRepositoryTest {
-    
+// Test only MongoDB repositories
+@DataMongoTest
+class MongoArticleRepositoryTest {
+
     @Autowired
-    private UserRepository userRepository;
-    
-    @MockBean // Mock external service used by repository
-    private AuditService auditService;
-    
+    private MongoArticleRepository repository;
+
     @Test
-    @DisplayName("Should find user by email")
-    void shouldFindUserByEmail() {
+    @DisplayName("Should find published articles by tag")
+    void shouldFindPublishedArticlesByTag() {
         // Test implementation
     }
 }
 
 // Test only REST controllers
-@WebMvcTest(UserController.class)
-class UserControllerSliceTest {
-    
+@WebMvcTest(ArticleController.class)
+class ArticleControllerSliceTest {
+
     @Autowired
     private MockMvc mockMvc;
-    
+
     @MockBean
-    private UserService userService;
-    
+    private CreateArticleUseCase createArticleUseCase;
+
+    @MockBean
+    private GetArticleUseCase getArticleUseCase;
+
     @Test
     @DisplayName("Should validate input")
     void shouldValidateInput() throws Exception {
@@ -387,360 +1021,593 @@ class UserControllerSliceTest {
 }
 ```
 
-## 4. Libraries and Dependencies
+## 5. Libraries and Dependencies
 
-### 4.1 Core Libraries
+### 5.1 Core Libraries
 
-- **Spring Data JPA**: For database access and ORM
-- **Spring Validation**: Input validation
-- **Spring Cache**: Caching capabilities
-- **RestClient**: HTTP client for external API integration (Spring 6.1+)
-- **SLF4J**: Logging facade for consistent logging implementation
+- **Spring Boot**: Foundation for the application
+- **Spring Data MongoDB**: For MongoDB database access
+- **Spring Validation**: Input validation using Bean Validation (JSR-380)
+- **Spring HATEOAS**: For creating REST representations with hypermedia links
+- **Spring Security**: Authentication and authorization
 - **Lombok**: Reduce boilerplate code with annotations like `@Builder`, `@Slf4j`, `@RequiredArgsConstructor`
-- **Mapstruct**: Object mapping
+- **MapStruct**: Type-safe bean mapping between domain objects and DTOs
+- **Problem Spring Web**: RFC 7807 Problem Details implementation for error responses
 
-### 4.2 Database
+### 5.2 Database
 
-- Use Spring Data repositories for database operations
-- Consider QueryDSL for type-safe dynamic queries
-- Implement proper transaction management with `@Transactional`
-- Use Flyway or Liquibase for database migrations
-- Configure connection pooling (HikariCP recommended)
+- **MongoDB**: Document database that works well with DDD aggregates
+- **Spring Data MongoDB**: Repository abstraction for MongoDB
+- **MongoDB Testcontainers**: For integration testing with real MongoDB instances
+- **Embedded MongoDB**: For faster integration tests
 
-### 4.3 Logging
+### 5.3 Logging
 
-- Use SLF4J with Logback as the logging facade
-- Configure appropriate log levels for different environments
-- Include essential information in log messages (correlation IDs, user contexts)
-- Consider using a structured logging format (JSON) for production
-- Implement proper log rotation and archiving
+- **SLF4J with Logback**: Logging facade and implementation
+- **Logstash Logback Encoder**: JSON formatting for structured logging
+- **MDC (Mapped Diagnostic Context)**: For adding context to log entries
 
-```java
-@Service
-@Slf4j
-public class UserServiceImpl implements UserService {
-    
-    @Override
-    public UserDto createUser(UserCreationRequest request) {
-        log.info("Creating new user with email: {}", request.getEmail());
-        
-        try {
-            // Business logic
-            UserDto mappedUser = new UserDto(); // Simplified for example
-            return mappedUser;
-        } catch (Exception e) {
-            log.error("Failed to create user with email: {}", request.getEmail(), e);
-            throw e;
-        }
-    }
-}
-```
+### 5.4 API Documentation
 
-### 4.4 API Documentation
+- **SpringDoc OpenAPI**: OpenAPI 3.0 documentation
+- **SpringDoc UI**: Swagger UI for API exploration
 
-- Use Springdoc OpenAPI for API documentation
-- Document all endpoints with proper descriptions
-- Include example requests and responses
-- Document possible error responses
+### 5.5 HTTP Client with RestClient
 
-### 4.5 HTTP Client with RestClient
-
-Spring Boot 3.4 includes support for the newer RestClient from Spring Framework 6.1, which replaces the older
-RestTemplate. Use RestClient for making HTTP requests to external services:
+Spring Boot 3.4 includes support for the newer RestClient from Spring Framework 6.1, which is particularly useful for implementing adapters to external systems in a DDD architecture:
 
 ```java
-@Service
+@Component
+@RequiredArgsConstructor
 @Slf4j
-public class ExternalApiService {
-    
+public class ExternalAuthorServiceAdapter implements AuthorService {
+
     private final RestClient restClient;
-    
-    public ExternalApiService(RestClient.Builder restClientBuilder) {
+
+    public ExternalAuthorServiceAdapter(RestClient.Builder restClientBuilder, 
+                                       @Value("${services.author.baseUrl}") String baseUrl) {
         this.restClient = restClientBuilder
-            .baseUrl("https://api.example.com")
+            .baseUrl(baseUrl)
             .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
             .defaultStatusHandler(HttpStatusCode::is4xxClientError, (request, response) -> {
-                log.error("Client error: {} {}", response.getStatusCode(), response.getBodyAsString());
-                throw new ApiClientException("API client error: " + response.getStatusCode());
+                log.error("Author service client error: {} {}", 
+                          response.getStatusCode(), response.getBodyAsString());
+                throw new ExternalServiceException("Author service error: " + response.getStatusCode());
             })
             .build();
     }
-    
-    public ProductDto getProduct(Long productId) {
-        log.info("Fetching product with ID: {}", productId);
-        return restClient.get()
-            .uri("/products/{id}", productId)
-            .retrieve()
-            .body(ProductDto.class);
+
+    @Override
+    public AuthorDetails getAuthorDetails(AuthorId authorId) {
+        log.info("Fetching author details for ID: {}", authorId.getValue());
+        try {
+            ExternalAuthorDto dto = restClient.get()
+                .uri("/authors/{id}", authorId.getValue())
+                .retrieve()
+                .body(ExternalAuthorDto.class);
+
+            return mapToAuthorDetails(dto);
+        } catch (Exception e) {
+            log.error("Failed to fetch author details", e);
+            throw new DomainException("Unable to retrieve author information");
+        }
     }
-    
-    public List<ProductDto> searchProducts(String query) {
-        log.info("Searching products with query: {}", query);
-        return restClient.get()
-            .uri(uriBuilder -> uriBuilder
-                .path("/products/search")
-                .queryParam("q", query)
-                .build())
-            .retrieve()
-            .body(new ParameterizedTypeReference<List<ProductDto>>() {});
-    }
-    
-    public ProductDto createProduct(ProductCreationRequest request) {
-        log.info("Creating new product: {}", request.getName());
-        return restClient.post()
-            .uri("/products")
-            .body(request)
-            .retrieve()
-            .body(ProductDto.class);
+
+    private AuthorDetails mapToAuthorDetails(ExternalAuthorDto dto) {
+        // Mapping logic
+        return new AuthorDetails(
+            new AuthorId(dto.getId()),
+            dto.getName(),
+            dto.getBio(),
+            dto.getFollowersCount()
+        );
     }
 }
 ```
 
-Benefits of RestClient over RestTemplate:
+## 6. Common Pitfalls and Gotchas
 
-- Fluent interface with builder pattern
-- Better error handling
-- Type safety
-- Streamlined request/response processing
-- Simplified URI template handling
-- Enhanced interceptor support
+### 6.1 DDD-Specific Challenges
 
-## 5. Common Pitfalls and Gotchas
+- **Anemic Domain Model**: Avoid creating domain models that are just data holders without behavior
+- **Misidentifying Aggregates**: Make aggregates as small as possible while maintaining consistency boundaries
+- **Overusing Value Objects**: Not everything needs to be a value object; use them for concepts with identity based on attributes
+- **Ignoring Bounded Contexts**: Failing to identify and separate different contexts leads to a muddled model
+- **Repository Overuse**: Don't create a repository for every entity; repositories are for aggregate roots only
+- **Domain Logic in Application Layer**: Keep business rules in the domain layer, not in application services
+- **Leaking Domain Objects**: Don't expose domain objects to the outside world; use DTOs at the boundaries
 
-### 5.1 Frequent Mistakes to Avoid
+```java
+// AVOID: Anemic domain model
+public class Article {
+    private String id;
+    private String title;
+    private String content;
+    private String authorId;
+    private String status;
 
-- **Not Understanding Spring Boot Concepts**: Ensure solid understanding of Spring and Dependency Injection before
-  diving in
-- **Overusing `@Autowired`**: Always prefer constructor injection over field injection
-- **Not Using Spring Boot Starters**: Leverage Spring Boot Starters for simplified dependency management
-- **Hardcoded Configuration**: Externalize configuration using `application.properties` or `application.yml`
-- **Poor Exception Handling**: Implement proper exception handling with meaningful error responses
-- **System.out for Logging**: Always use a proper logging framework (SLF4J with Logback)
-- **Missing Monitoring**: Set up proper monitoring and alerting
+    // Getters and setters only, no behavior
+}
 
-### 5.2 Edge Cases to Consider
+// BETTER: Rich domain model with behavior
+public class Article extends AggregateRoot {
+    private ArticleId id;
+    private Title title;
+    private Content content;
+    private AuthorId authorId;
+    private ArticleStatus status;
 
-- **Null Values**: Handle null values gracefully with proper validation
-- **Empty Collections**: Properly handle empty collections
-- **Large Datasets**: Optimize performance for large datasets with pagination
-- **Concurrency Issues**: Implement proper concurrency controls
-- **Network Errors**: Add resilience for handling network errors gracefully
+    // Private constructor to enforce factory method
+    private Article() {}
 
-### 5.3 Version Compatibility
+    // Factory method
+    public static Article create(ArticleId id, Title title, Content content, AuthorId authorId) {
+        // Creation logic with validation
+    }
+
+    // Business methods that enforce invariants
+    public void publish() {
+        if (this.status == ArticleStatus.PUBLISHED) {
+            throw new DomainException("Article is already published");
+        }
+        // Publishing logic
+    }
+}
+```
+
+### 6.2 Edge Cases to Consider
+
+- **Eventual Consistency**: In distributed systems, handle the fact that data might not be immediately consistent
+- **Concurrent Modifications**: Use optimistic locking with version fields to detect concurrent modifications
+- **Long-Running Processes**: Consider using sagas or process managers for operations that span multiple aggregates
+- **Large Aggregates**: Be cautious with large aggregates that might cause performance issues; consider breaking them down
+- **Cross-Bounded Context Queries**: Complex queries across bounded contexts might require specialized query models
+
+### 6.3 Version Compatibility
 
 - **Spring Boot Version**: Ensure dependencies are compatible with your Spring Boot version
 - **Java Version**: Verify Java version compatibility with Spring Boot release
-- **Third-Party Libraries**: Check third-party library compatibility
+- **MongoDB Driver**: Check MongoDB driver compatibility with your MongoDB server version
 
-### 5.4 Anti-Patterns to Avoid
+### 6.4 Anti-Patterns to Avoid
 
+- **Smart UI Anti-Pattern**: Don't put domain logic in controllers or UI components
+- **Transaction Script**: Avoid procedural service methods that implement entire use cases without domain objects
+- **Active Record**: Don't mix persistence concerns with domain logic in the same class
 - **God Class**: Break down large classes into smaller, focused ones
-- **Long Method**: Extract long methods into smaller, single-responsibility methods
-- **Field Injection**: Avoid `@Autowired` on fields; use constructor injection or `@RequiredArgsConstructor`:
+- **Feature Envy**: Methods that are more interested in another class's data than their own should be moved
+- **Shotgun Surgery**: If a change requires modifications in many classes, your design might need improvement
 
 ```java
-// AVOID
+// AVOID: Transaction Script anti-pattern
 @Service
-public class BadUserService {
-    @Autowired
-    private UserRepository userRepository;  // Field injection
-}
+public class ArticleService {
+    private final JdbcTemplate jdbcTemplate;
 
-// RECOMMENDED (Option 1)
-@Service
-public class GoodUserService {
-    private final UserRepository userRepository;
-    
-    // Constructor injection
-    public GoodUserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    public void publishArticle(String articleId, String userId) {
+        // Direct database operations without domain model
+        jdbcTemplate.update(
+            "UPDATE articles SET status = 'PUBLISHED', published_at = ? WHERE id = ? AND author_id = ?",
+            LocalDateTime.now(), articleId, userId
+        );
     }
 }
 
-// RECOMMENDED (Option 2)
+// BETTER: Domain-driven approach
 @Service
-@RequiredArgsConstructor
-public class GoodUserService {
-    private final UserRepository userRepository;
-    // No constructor needed, Lombok generates it
+public class PublishArticleUseCase {
+    private final ArticleRepository articleRepository;
+    private final ArticleValidationService validationService;
+
+    @Transactional
+    public ArticleResponse execute(String articleId, String userId) {
+        ArticleId id = new ArticleId(articleId);
+        AuthorId authorId = new AuthorId(userId);
+
+        Article article = articleRepository.findById(id)
+            .orElseThrow(() -> new DomainException("Article not found"));
+
+        validationService.validateAuthorPermission(article, authorId);
+        validationService.validateArticleCanBePublished(article);
+
+        article.publish();
+        Article savedArticle = articleRepository.save(article);
+
+        return mapper.toArticleResponse(savedArticle);
+    }
 }
 ```
 
-- **Tight Coupling**: Use interfaces to reduce dependencies between components
-- **Ignoring Exceptions**: Always handle exceptions properly or propagate with meaningful context
-- **Excessive Layering**: Avoid creating unnecessary abstraction layers
-- **Premature Optimization**: Focus on clean code first, optimize when necessary with measurements
+## 7. Performance Optimization Techniques
 
-## 6. Performance Optimization Techniques
+### 7.1 Database Query Optimization
 
-### 6.1 Database Query Optimization
+In DDD applications, database optimization requires special attention:
 
-- Use indexes for frequently queried columns
-- Avoid N+1 query problems by using fetch joins or EntityGraph
-- Optimize JPQL/HQL queries for better performance
-- Use query projections when only a subset of data is needed
-- Configure connection pooling (HikariCP) appropriately for your workload
+- **Aggregate Design**: Design aggregates to support efficient querying and loading
+- **Read Models**: Create specialized read models for complex queries
+- **Command-Query Responsibility Segregation (CQRS)**: Separate read and write models for high-performance scenarios
+- **Indexes**: Create indexes for frequently queried fields, especially aggregate identifiers
+- **Projections**: Use MongoDB projections to retrieve only needed fields
+- **Pagination**: Always paginate when retrieving collections of aggregates
 
-### 6.2 Caching
+```java
+@Repository
+@RequiredArgsConstructor
+@Slf4j
+public class ArticleQueryRepository {
+    private final MongoTemplate mongoTemplate;
 
-Implement appropriate caching strategies:
+    public Page<ArticleSummaryDto> findPublishedArticleSummaries(int page, int size) {
+        log.debug("Finding published article summaries, page: {}, size: {}", page, size);
+
+        // Create a query that only retrieves necessary fields
+        Query query = new Query()
+            .addCriteria(Criteria.where("status").is(ArticleStatus.PUBLISHED.name()))
+            .with(PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "publishedAt")));
+
+        // Use projection to retrieve only needed fields
+        query.fields()
+            .include("articleId")
+            .include("title")
+            .include("slug")
+            .include("authorId")
+            .include("publishedAt")
+            .include("tags");
+
+        // Execute query
+        List<ArticleSummaryDto> summaries = mongoTemplate.find(query, ArticleSummaryDto.class, "articles");
+        long total = mongoTemplate.count(query.skip(-1).limit(-1), "articles");
+
+        return new PageImpl<>(summaries, PageRequest.of(page, size), total);
+    }
+}
+```
+
+### 7.2 Caching
+
+Implement strategic caching for read-heavy operations:
 
 ```java
 @Configuration
 @EnableCaching
 @Slf4j
 public class CacheConfig {
-    
+
     @Bean
     public CacheManager cacheManager() {
         log.info("Initializing cache manager");
         SimpleCacheManager cacheManager = new SimpleCacheManager();
         cacheManager.setCaches(List.of(
-            new ConcurrentMapCache("users"),
-            new ConcurrentMapCache("products")
+            new ConcurrentMapCache("articles"),
+            new ConcurrentMapCache("articleSummaries"),
+            new ConcurrentMapCache("authors")
         ));
         return cacheManager;
     }
 }
 
-@Service
+@Component
+@RequiredArgsConstructor
 @Slf4j
-public class ProductService {
-    
-    @Cacheable(value = "products", key = "#id")
-    public ProductDto findById(Long id) {
-        log.info("Finding product by ID: {} (cache miss)", id);
-        // Method that would benefit from caching
-        return new ProductDto(); // Simplified for example
+public class CachedArticleRepository implements ArticleRepository {
+    private final MongoArticleRepository mongoRepository;
+
+    @Override
+    public Article save(Article article) {
+        log.debug("Saving article with ID: {}", article.getArticleId().getValue());
+        return mongoRepository.save(article);
     }
-    
-    @CacheEvict(value = "products", key = "#id")
-    public void updateProduct(Long id, ProductUpdateRequest request) {
-        log.info("Updating product with ID: {}", id);
-        // Cache entry will be evicted after update
+
+    @Override
+    @Cacheable(value = "articles", key = "#id.value")
+    public Optional<Article> findById(ArticleId id) {
+        log.debug("Finding article by ID: {} (cache miss)", id.getValue());
+        return mongoRepository.findById(id.getValue());
+    }
+
+    @Override
+    @CacheEvict(value = "articles", key = "#article.articleId.value")
+    public void delete(Article article) {
+        log.debug("Deleting article with ID: {}", article.getArticleId().getValue());
+        mongoRepository.delete(article);
     }
 }
 ```
 
-### 6.3 Asynchronous Processing
+Key caching considerations in DDD:
 
-Use `@Async` for non-blocking operations:
+- Cache aggregate roots by their identifiers
+- Invalidate cache entries when aggregates are modified
+- Consider using Redis or Hazelcast for distributed caching in multi-instance environments
+- Be cautious with caching in write-heavy scenarios
+
+### 7.3 Asynchronous Processing
+
+Use asynchronous processing for operations that don't require immediate consistency:
 
 ```java
 @Service
+@RequiredArgsConstructor
 @Slf4j
-public class EmailService {
-    
+public class ArticlePublicationService {
+    private final ArticleRepository articleRepository;
+    private final DomainEventPublisher eventPublisher;
+
     @Async
-    public CompletableFuture<Boolean> sendEmail(String to, String subject, String content) {
-        log.info("Sending email asynchronously to: {}", to);
-        // Asynchronous email sending implementation
-        return CompletableFuture.completedFuture(true);
+    public CompletableFuture<Void> processArticlePublication(ArticleId articleId) {
+        log.info("Asynchronously processing publication for article: {}", articleId.getValue());
+
+        try {
+            // Retrieve the article
+            Article article = articleRepository.findById(articleId)
+                .orElseThrow(() -> new DomainException("Article not found"));
+
+            // Perform time-consuming operations
+            generateArticleThumbnails(article);
+            updateSearchIndex(article);
+            notifySubscribers(article);
+
+            // Publish domain event
+            eventPublisher.publish(new ArticlePublicationCompletedEvent(articleId));
+
+            return CompletableFuture.completedFuture(null);
+        } catch (Exception e) {
+            log.error("Failed to process article publication", e);
+            return CompletableFuture.failedFuture(e);
+        }
+    }
+
+    private void generateArticleThumbnails(Article article) {
+        // Time-consuming operation
+    }
+
+    private void updateSearchIndex(Article article) {
+        // Time-consuming operation
+    }
+
+    private void notifySubscribers(Article article) {
+        // Time-consuming operation
     }
 }
 ```
 
-### 6.4 Pagination
+### 7.4 Pagination
 
-Implement pagination for large datasets:
+Implement pagination for all collection-based queries:
 
 ```java
 @RestController
-@RequestMapping("/api/v1/products")
+@RequestMapping("/api/v1/articles")
+@RequiredArgsConstructor
 @Slf4j
-public class ProductController {
-    
-    private final ProductService productService;
-    
-    public ProductController(ProductService productService) {
-        this.productService = productService;
-    }
-    
+public class ArticleController {
+    private final ListArticlesUseCase listArticlesUseCase;
+
     @GetMapping
-    public Page<ProductDto> getAllProducts(
+    public ResponseEntity<PagedModel<EntityModel<ArticleSummaryResponse>>> listArticles(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "id") String sortBy) {
-        
-        log.info("Fetching products page: {}, size: {}, sortBy: {}", page, size, sortBy);
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy));
-        return productService.findAll(pageable);
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String tag,
+            PagedResourcesAssembler<ArticleSummaryResponse> assembler) {
+
+        log.info("Listing articles page: {}, size: {}, tag: {}", page, size, tag);
+        Page<ArticleSummaryResponse> articlePage = listArticlesUseCase.execute(page, size, tag);
+
+        return ResponseEntity.ok(
+            assembler.toModel(
+                articlePage,
+                linkTo(methodOn(ArticleController.class).listArticles(page, size, tag, assembler))
+                    .withSelfRel()
+            )
+        );
     }
 }
 ```
 
-### 6.5 Load Testing
+### 7.5 Load Testing
 
-- Regularly perform load testing to identify bottlenecks
-- Use tools like JMeter, Gatling, or k6 for load testing
-- Monitor application performance under different load conditions
-- Establish performance baselines and set up alerts for deviations
+- Test each bounded context separately to identify bottlenecks
+- Focus on aggregate root loading performance
+- Measure repository implementation efficiency
+- Test with realistic data volumes that match production
+- Monitor memory usage to detect potential aggregate size issues
 
-## 7. Development Environment and Tooling
+## 8. Development Environment and Tooling
 
-### 7.1 Recommended Tools
+### 8.1 Recommended Tools for DDD
 
 - **IDE**: IntelliJ IDEA, Eclipse, or Visual Studio Code with Spring Boot extensions
-- **Build Tool**: Maven or Gradle
-- **Version Control**: Git with conventional commit messages
-- **API Testing**: Postman or Insomnia
-- **Database Client**: DBeaver or similar tools
+- **Build Tool**: Gradle with multi-module support for bounded contexts
+- **Version Control**: Git with conventional commit messages and feature branches per bounded context
+- **API Testing**: Postman or Insomnia with environment variables for different contexts
+- **Database Tools**: MongoDB Compass for document database visualization
+- **Diagram Tools**: Draw.io or PlantUML for context maps and aggregate visualizations
+- **Event Storming Tools**: Miro or Mural for collaborative domain modeling
 
-### 7.2 Code Quality Tools
+### 8.2 Code Quality Tools
 
-- **Static Code Analysis**: SonarQube to identify code smells and potential bugs
+- **Static Code Analysis**: SonarQube with custom rules for DDD patterns
+- **Architecture Validation**: ArchUnit to enforce DDD architectural constraints
 - **Style Enforcement**: Checkstyle to ensure coding style consistency
 - **Code Quality**: PMD, SpotBugs to detect potential problems
 - **EditorConfig**: Use EditorConfig to maintain consistent formatting across editors
 
-## 8. General Best Practices
+Example of ArchUnit tests to enforce DDD architecture:
 
-### 8.1 Code Quality
+```java
+@AnalyzeClasses(packages = "app.quantun.blog")
+class ArchitectureTest {
 
-- Follow a consistent coding style guide
-- Implement peer code reviews
+    @ArchTest
+    static final ArchRule domainShouldNotDependOnInfrastructure =
+        noClasses().that().resideInAPackage("..domain..")
+            .should().dependOnClassesThat().resideInAPackage("..infrastructure..");
+
+    @ArchTest
+    static final ArchRule domainShouldNotDependOnApplication =
+        noClasses().that().resideInAPackage("..domain..")
+            .should().dependOnClassesThat().resideInAPackage("..application..");
+
+    @ArchTest
+    static final ArchRule repositoriesShouldBeImplementedInInfrastructure =
+        classes().that().haveNameMatching(".*Repository")
+            .and().areNotInterfaces()
+            .should().resideInAPackage("..infrastructure.persistence..");
+
+    @ArchTest
+    static final ArchRule aggregateRootsShouldExtendAggregateRoot =
+        classes().that().areAnnotatedWith(Document.class)
+            .should().beAssignableTo(AggregateRoot.class);
+
+    @ArchTest
+    static final ArchRule valueObjectsShouldExtendValueObject =
+        classes().that().haveSimpleNameEndingWith("Id")
+            .or().haveSimpleNameEndingWith("Name")
+            .or().haveSimpleNameEndingWith("Email")
+            .or().haveSimpleNameEndingWith("Address")
+            .should().beAssignableTo(ValueObject.class);
+}
+```
+
+## 9. General Best Practices
+
+### 9.1 Code Quality in DDD
+
+- Follow the ubiquitous language consistently in code
+- Implement peer code reviews with domain experts when possible
 - Keep methods small and focused on a single responsibility
-- Use meaningful names for classes, methods, and variables
-- Write comprehensive unit tests
-- Document complex logic with clear comments
+- Use meaningful names that reflect domain concepts
+- Write comprehensive tests at all levels (domain, application, infrastructure)
+- Document domain decisions and the reasoning behind them
+- Use comments to explain "why" not "what" the code does
+- Refactor continuously as your understanding of the domain evolves
 
-### 8.2 Performance Optimization
+### 9.2 Performance Optimization
 
-- Use appropriate caching strategies
-- Optimize database queries and indexing
-- Consider using pagination for large result sets
-- Implement asynchronous processing for long-running tasks
-- Monitor and optimize JVM memory settings
+- Design aggregates with performance in mind (size, loading patterns)
+- Use read models and projections for complex queries
+- Consider CQRS for high-performance scenarios
+- Implement domain-specific caching strategies
+- Use asynchronous domain events for non-critical operations
+- Monitor aggregate loading and saving performance
 
-### 8.3 Documentation
+### 9.3 Documentation
 
-- Maintain updated README files
-- Document architecture decisions (ADRs)
+- Maintain a glossary of domain terms (ubiquitous language)
+- Document bounded contexts and their relationships (context map)
+- Create visual representations of aggregates and their relationships
+- Document architecture decisions (ADRs) with domain context
 - Keep API documentation synchronized with code
-- Document configuration options
-- Include diagrams for complex systems or workflows
+- Include domain event flows and process diagrams
+- Document anti-corruption layers between bounded contexts
 
-## 9. Additional Considerations
+Example of a domain glossary:
 
-### 9.1 Internationalization and Localization
+```
+# Blog Domain Glossary
 
-If your application needs to support multiple languages or regions:
+## Article
+A piece of content written by an Author, containing a title, content body, and optional tags.
 
+## Author
+A person who creates and publishes Articles.
+
+## Slug
+A URL-friendly version of an Article's title, used in web addresses.
+
+## Tag
+A keyword or term assigned to an Article, making it easier to find related content.
+
+## Publication
+The process of making an Article publicly visible and available to readers.
+```
+
+## 10. Additional Considerations
+
+### 10.1 Internationalization and Localization
+
+When implementing internationalization in a DDD context:
+
+- Keep translation concerns in the infrastructure layer
+- Use value objects for locale-sensitive concepts
+- Consider cultural differences as part of the domain model when relevant
+- Implement domain services for locale-specific business rules
 - Use Spring's `MessageSource` for externalized messages
 - Configure locale resolution strategies
-- Implement locale-specific formatting for dates, numbers, and currencies
-- Consider cultural differences in UI design
 
-### 9.2 Advanced API Design Principles
+```java
+@Component
+@RequiredArgsConstructor
+public class LocalizedContentService {
+    private final MessageSource messageSource;
 
-- Implement consistent naming conventions across all endpoints
-- Provide standardized filtering, sorting, and pagination mechanisms
-- Design comprehensive error response payloads
-- Consider implementing HATEOAS for better API discoverability
-- Version your APIs appropriately to manage changes
+    public Content getLocalizedContent(Content originalContent, Locale locale) {
+        // Domain logic for content localization
+        if (isDefaultLocale(locale)) {
+            return originalContent;
+        }
+
+        // Get localized version or fallback to original
+        return getLocalizedVersionOrFallback(originalContent, locale);
+    }
+
+    public Title getLocalizedTitle(Title originalTitle, Locale locale) {
+        // Domain logic for title localization
+        if (isDefaultLocale(locale)) {
+            return originalTitle;
+        }
+
+        // Get localized version or fallback to original
+        return getLocalizedTitleOrFallback(originalTitle, locale);
+    }
+}
+```
+
+### 10.2 Advanced API Design Principles
+
+When designing APIs for DDD-based systems:
+
+- Align API resources with aggregate boundaries
+- Use hypermedia (HATEOAS) to represent domain relationships
+- Design comprehensive error responses that reflect domain exceptions
+- Version APIs to accommodate domain model evolution
+- Implement consistent naming that reflects the ubiquitous language
+- Consider GraphQL for complex domain queries across aggregates
+
+```java
+@RestController
+@RequestMapping("/api/v1/articles")
+@RequiredArgsConstructor
+public class ArticleController {
+    private final GetArticleUseCase getArticleUseCase;
+
+    @GetMapping("/{id}")
+    public EntityModel<ArticleResponse> getArticle(@PathVariable String id) {
+        ArticleResponse article = getArticleUseCase.executeById(id);
+
+        // Add hypermedia links that reflect domain relationships
+        return EntityModel.of(article,
+            linkTo(methodOn(ArticleController.class).getArticle(id)).withSelfRel(),
+            linkTo(methodOn(AuthorController.class).getAuthor(article.getAuthorId())).withRel("author"),
+            linkTo(methodOn(ArticleController.class).getArticlesByTag(null, article.getTags().iterator().next()))
+                .withRel("similarArticles")
+        );
+    }
+}
+```
 
 ## Conclusion
 
-These guidelines are designed to ensure quality, maintainability, and robustness for Spring Boot 3.4 applications. Teams
-should adapt these practices to their specific requirements while maintaining the core principles outlined in this
-document.
+These guidelines are designed to ensure quality, maintainability, and robustness for Spring Boot 3.4 applications built using Domain-Driven Design principles. By focusing on the domain model as the core of your application and organizing code around business capabilities, teams can create more maintainable and flexible systems that better align with business needs.
+
+Remember that DDD is not just about technical patterns but also about collaboration between domain experts and developers to create a shared understanding of the problem domain. The ubiquitous language developed during this collaboration should be reflected in your code, documentation, and discussions.
+
+Teams should adapt these practices to their specific requirements while maintaining the core DDD principles outlined in this document:
+
+- Focus on the core domain and domain logic
+- Base complex designs on models of the domain
+- Collaborate with domain experts to improve the application model
+- Continuously refine the model as the domain evolves
+
+By following these guidelines, you'll be well-positioned to create Spring Boot applications that not only meet technical requirements but also accurately reflect and solve business problems.

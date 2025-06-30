@@ -1,4 +1,7 @@
 package app.quantun.blog.content.domain.model;
 
-public class ArticleStatus {
+public enum ArticleStatus {
+    DRAFT,
+    PUBLISHED,
+    ARCHIVED
 }
