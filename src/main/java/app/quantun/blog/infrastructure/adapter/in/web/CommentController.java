@@ -2,8 +2,8 @@ package app.quantun.blog.infrastructure.adapter.in.web;
 
 import app.quantun.blog.domain.model.PostId;
 import app.quantun.blog.domain.port.in.AddCommentUseCase;
-import app.quantun.blog.infrastructure.adapter.in.web.dto.CommentRequest;
-import app.quantun.blog.infrastructure.adapter.in.web.dto.CommentResponse;
+import app.quantun.blog.infrastructure.adapter.in.web.contract.request.CommentRequest;
+import app.quantun.blog.infrastructure.adapter.in.web.contract.response.CommentResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

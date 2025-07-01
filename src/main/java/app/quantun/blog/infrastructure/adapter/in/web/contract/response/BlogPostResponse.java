@@ -1,4 +1,4 @@
-package app.quantun.blog.infrastructure.adapter.in.web.dto;
+package app.quantun.blog.infrastructure.adapter.in.web.contract.response;
 
 
 

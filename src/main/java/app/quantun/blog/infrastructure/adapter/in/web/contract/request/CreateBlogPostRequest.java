@@ -1,10 +1,7 @@
-package app.quantun.blog.infrastructure.adapter.in.web.dto;
+package app.quantun.blog.infrastructure.adapter.in.web.contract.request;
 
 import lombok.Builder;
-import lombok.Data;
-import lombok.Getter;
 
-import java.util.List;
 import java.util.Set;
 
 @Builder

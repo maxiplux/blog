@@ -1,8 +1,8 @@
 package app.quantun.blog.infrastructure.adapter.in.web;
 
 import app.quantun.blog.domain.port.in.CreateAuthorUseCase;
-import app.quantun.blog.infrastructure.adapter.in.web.dto.AuthorResponse;
-import app.quantun.blog.infrastructure.adapter.in.web.dto.CreateAuthorRequest;
+import app.quantun.blog.infrastructure.adapter.in.web.contract.response.AuthorResponse;
+import app.quantun.blog.infrastructure.adapter.in.web.contract.request.CreateAuthorRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
