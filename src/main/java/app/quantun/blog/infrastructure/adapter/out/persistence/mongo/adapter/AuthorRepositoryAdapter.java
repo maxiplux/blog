@@ -3,7 +3,8 @@ package app.quantun.blog.infrastructure.adapter.out.persistence.mongo.adapter;
 
 
 import app.quantun.blog.domain.model.Author;
-import app.quantun.blog.domain.port.out.AuthorRepositoryPort;
+import app.quantun.blog.domain.model.AuthorId;
+import app.quantun.blog.application.port.out.AuthorRepositoryPort;
 import app.quantun.blog.infrastructure.adapter.out.persistence.mongo.entity.AuthorEntity;
 import app.quantun.blog.infrastructure.adapter.out.persistence.mongo.mapper.AuthorEntityMapper;
 import app.quantun.blog.infrastructure.adapter.out.persistence.mongo.repository.AuthorMongoRepository;
@@ -32,8 +33,8 @@ public class AuthorRepositoryAdapter implements AuthorRepositoryPort {
     }
 
     @Override
-    public Optional<Author> findById(String id) {
-        return mongoRepository.findById(id)
+    public Optional<Author> findById(AuthorId id) {
+        return mongoRepository.findById(id.value())
                 .map(mapper::toDomain);
     }
 
@@ -49,7 +50,7 @@ public class AuthorRepositoryAdapter implements AuthorRepositoryPort {
     }
 
     @Override
-    public void deleteById(String id) {
-        mongoRepository.deleteById(id);
+    public void deleteById(AuthorId id) {
+        mongoRepository.deleteById(id.value());
     }
 }

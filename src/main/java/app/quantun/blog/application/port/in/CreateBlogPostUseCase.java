@@ -1,5 +1,6 @@
-package app.quantun.blog.domain.port.in;
+package app.quantun.blog.application.port.in;
 
+import app.quantun.blog.domain.model.AuthorId;
 import app.quantun.blog.domain.model.BlogPost;
 
 import java.util.Set;
@@ -11,7 +12,7 @@ public interface CreateBlogPostUseCase {
             String title,
             String content,
             String summary,
-            String authorId,
+            AuthorId authorId,
             Set<String> tagNames
     ) {
         public CreateBlogPostCommand {
@@ -21,8 +22,8 @@ public interface CreateBlogPostUseCase {
             if (content == null || content.isBlank()) {
                 throw new IllegalArgumentException("Content cannot be null or empty");
             }
-            if (authorId == null || authorId.isBlank()) {
-                throw new IllegalArgumentException("Author ID cannot be null or empty");
+            if (authorId == null) {
+                throw new IllegalArgumentException("Author ID cannot be null");
             }
         }
     }

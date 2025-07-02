@@ -1,5 +1,6 @@
 package app.quantun.blog.infrastructure.adapter.out.persistence.mongo.adapter;
 
+import app.quantun.blog.domain.model.AuthorId;
 import app.quantun.blog.domain.model.BlogPost;
 import app.quantun.blog.domain.model.PostId;
 import app.quantun.blog.domain.model.PostStatus;
@@ -141,10 +142,10 @@ class BlogPostRepositoryAdapterTest {
     @Test
     void shouldFindBlogPostsByAuthorId() {
         // Arrange
-        String authorId = "author-123";
+        AuthorId authorId = AuthorId.of("author-123");
         List<BlogPostEntity> entities = List.of(new BlogPostEntity(), new BlogPostEntity());
 
-        when(mongoRepository.findByAuthorId(authorId)).thenReturn(entities);
+        when(mongoRepository.findByAuthorId(authorId.value())).thenReturn(entities);
         when(mapper.toDomain(any(BlogPostEntity.class))).thenReturn(createSampleBlogPost());
 
         // Act
@@ -153,7 +154,7 @@ class BlogPostRepositoryAdapterTest {
         // Assert
         assertEquals(2, result.size());
 
-        verify(mongoRepository).findByAuthorId(authorId);
+        verify(mongoRepository).findByAuthorId(authorId.value());
         verify(mapper, times(2)).toDomain(any(BlogPostEntity.class));
     }
 
@@ -209,10 +210,9 @@ class BlogPostRepositoryAdapterTest {
                 .content("Test content")
                 .summary("Test summary")
                 .slug(Slug.fromTitle("Test Post"))
-                .authorId("author-123")
+                .authorId(AuthorId.of("author-123"))
                 .status(PostStatus.DRAFT)
-                .tag(Tag.create("java"))
-                .tag(Tag.create("spring"))
+                .tags(Set.of(Tag.create("java"), Tag.create("spring")))
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();

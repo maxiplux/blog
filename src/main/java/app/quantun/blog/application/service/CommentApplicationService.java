@@ -1,20 +1,20 @@
-package app.quantun.blog.domain.service;
+package app.quantun.blog.application.service;
 
-
-
+import app.quantun.blog.application.port.in.AddCommentUseCase;
+import app.quantun.blog.application.port.out.BlogPostRepositoryPort;
+import app.quantun.blog.application.port.out.CommentRepositoryPort;
 import app.quantun.blog.domain.model.Comment;
-import app.quantun.blog.domain.port.in.AddCommentUseCase;
-import app.quantun.blog.domain.port.out.BlogPostRepositoryPort;
-import app.quantun.blog.domain.port.out.CommentRepositoryPort;
 import app.quantun.blog.shared.exception.BlogPostNotFoundException;
+import org.springframework.stereotype.Service;
 
-public class CommentService implements AddCommentUseCase {
+@Service
+public class CommentApplicationService implements AddCommentUseCase {
 
     private final CommentRepositoryPort commentRepositoryPort;
     private final BlogPostRepositoryPort blogPostRepositoryPort;
 
-    public CommentService(CommentRepositoryPort commentRepositoryPort,
-                          BlogPostRepositoryPort blogPostRepositoryPort) {
+    public CommentApplicationService(CommentRepositoryPort commentRepositoryPort,
+                                    BlogPostRepositoryPort blogPostRepositoryPort) {
         this.commentRepositoryPort = commentRepositoryPort;
         this.blogPostRepositoryPort = blogPostRepositoryPort;
     }

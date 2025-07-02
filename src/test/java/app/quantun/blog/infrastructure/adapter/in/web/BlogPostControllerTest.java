@@ -1,11 +1,13 @@
 package app.quantun.blog.infrastructure.adapter.in.web;
 
+import app.quantun.blog.application.port.in.CreateBlogPostUseCase;
+import app.quantun.blog.application.port.in.GetBlogPostUseCase;
+import app.quantun.blog.application.port.in.PublishBlogPostUseCase;
+import app.quantun.blog.domain.model.AuthorId;
 import app.quantun.blog.domain.model.BlogPost;
 import app.quantun.blog.domain.model.PostId;
 import app.quantun.blog.domain.model.PostStatus;
-import app.quantun.blog.domain.port.in.CreateBlogPostUseCase;
-import app.quantun.blog.domain.port.in.GetBlogPostUseCase;
-import app.quantun.blog.domain.port.in.PublishBlogPostUseCase;
+
 import app.quantun.blog.infrastructure.adapter.in.web.contract.request.CreateBlogPostRequest;
 import app.quantun.blog.shared.exception.BlogPostNotFoundException;
 import app.quantun.blog.shared.valueobject.Slug;
@@ -102,7 +104,7 @@ class BlogPostControllerTest {
                 .tags(tags)
                 .build();
 
-        BlogPost createdPost = BlogPost.createDraft(title, content, summary, authorId);
+        BlogPost createdPost = BlogPost.createDraft(title, content, summary, AuthorId.of(authorId));
         when(createBlogPostUseCase.createBlogPost(any(CreateBlogPostUseCase.CreateBlogPostCommand.class)))
                 .thenReturn(createdPost);
 
@@ -194,7 +196,7 @@ class BlogPostControllerTest {
                 .content("Draft content")
                 .summary("Test summary")
                 .slug(Slug.fromTitle("Draft Post"))
-                .authorId("author-123")
+                .authorId(AuthorId.of("author-123"))
                 .status(PostStatus.DRAFT) // Important: set status to DRAFT
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
@@ -207,7 +209,7 @@ class BlogPostControllerTest {
                 .content("Draft content")
                 .summary("Test summary")
                 .slug(Slug.fromTitle("Draft Post"))
-                .authorId("author-123")
+                .authorId(AuthorId.of("author-123"))
                 .status(PostStatus.PUBLISHED)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
@@ -251,7 +253,7 @@ class BlogPostControllerTest {
                 .content("Test content")
                 .summary("Test summary")
                 .slug(Slug.fromTitle("Test Post"))
-                .authorId("author-123")
+                .authorId(AuthorId.of("author-123"))
                 .status(PostStatus.PUBLISHED)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())

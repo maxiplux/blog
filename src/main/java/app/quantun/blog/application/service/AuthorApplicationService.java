@@ -1,17 +1,20 @@
-package app.quantun.blog.domain.service;
+package app.quantun.blog.application.service;
 
+import app.quantun.blog.application.port.in.CreateAuthorUseCase;
+import app.quantun.blog.application.port.in.GetAuthorUseCase;
+import app.quantun.blog.application.port.out.AuthorRepositoryPort;
 import app.quantun.blog.domain.model.Author;
-import app.quantun.blog.domain.port.in.CreateAuthorUseCase;
-import app.quantun.blog.domain.port.out.AuthorRepositoryPort;
-import app.quantun.blog.infrastructure.adapter.in.web.GetAuthorUseCase;
+import app.quantun.blog.domain.model.AuthorId;
 import app.quantun.blog.shared.exception.AuthorNotFoundException;
 import app.quantun.blog.shared.valueobject.Email;
+import org.springframework.stereotype.Service;
 
-public class AuthorService implements CreateAuthorUseCase, GetAuthorUseCase {
+@Service
+public class AuthorApplicationService implements CreateAuthorUseCase, GetAuthorUseCase {
 
     private final AuthorRepositoryPort authorRepositoryPort;
 
-    public AuthorService(AuthorRepositoryPort authorRepositoryPort) {
+    public AuthorApplicationService(AuthorRepositoryPort authorRepositoryPort) {
         this.authorRepositoryPort = authorRepositoryPort;
     }
 
@@ -28,8 +31,8 @@ public class AuthorService implements CreateAuthorUseCase, GetAuthorUseCase {
     }
 
     @Override
-    public Author getAuthorById(String authorId) {
+    public Author getAuthorById(AuthorId authorId) {
         return authorRepositoryPort.findById(authorId)
-                .orElseThrow(() -> new AuthorNotFoundException("Author not found: " + authorId));
+                .orElseThrow(() -> new AuthorNotFoundException("Author not found: " + authorId.value()));
     }
 }

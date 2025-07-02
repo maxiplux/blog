@@ -1,5 +1,6 @@
-package app.quantun.blog.domain.port.out;
+package app.quantun.blog.application.port.out;
 
+import app.quantun.blog.domain.model.AuthorId;
 import app.quantun.blog.domain.model.BlogPost;
 import app.quantun.blog.domain.model.PostId;
 import app.quantun.blog.domain.model.PostStatus;
@@ -13,7 +14,7 @@ public interface BlogPostRepositoryPort {
     Optional<BlogPost> findById(PostId postId);
     Optional<BlogPost> findBySlug(Slug slug);
     List<BlogPost> findByStatus(PostStatus status);
-    List<BlogPost> findByAuthorId(String authorId);
+    List<BlogPost> findByAuthorId(AuthorId authorId);
     List<BlogPost> findByTagName(String tagName);
     void deleteById(PostId postId);
     boolean existsBySlug(Slug slug);

@@ -3,7 +3,7 @@ package app.quantun.blog.infrastructure.adapter.out.persistence.mongo.adapter;
 
 import app.quantun.blog.domain.model.Comment;
 import app.quantun.blog.domain.model.PostId;
-import app.quantun.blog.domain.port.out.CommentRepositoryPort;
+import app.quantun.blog.application.port.out.CommentRepositoryPort;
 import app.quantun.blog.infrastructure.adapter.out.persistence.mongo.entity.CommentEntity;
 import app.quantun.blog.infrastructure.adapter.out.persistence.mongo.mapper.CommentEntityMapper;
 import app.quantun.blog.infrastructure.adapter.out.persistence.mongo.repository.CommentMongoRepository;

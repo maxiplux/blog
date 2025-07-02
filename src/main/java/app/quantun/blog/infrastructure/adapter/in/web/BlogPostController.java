@@ -1,10 +1,11 @@
 package app.quantun.blog.infrastructure.adapter.in.web;
 
 
+import app.quantun.blog.application.port.in.CreateBlogPostUseCase;
+import app.quantun.blog.application.port.in.GetBlogPostUseCase;
+import app.quantun.blog.application.port.in.PublishBlogPostUseCase;
+import app.quantun.blog.domain.model.AuthorId;
 import app.quantun.blog.domain.model.PostId;
-import app.quantun.blog.domain.port.in.CreateBlogPostUseCase;
-import app.quantun.blog.domain.port.in.GetBlogPostUseCase;
-import app.quantun.blog.domain.port.in.PublishBlogPostUseCase;
 import app.quantun.blog.infrastructure.adapter.in.web.contract.response.BlogPostResponse;
 import app.quantun.blog.infrastructure.adapter.in.web.contract.request.CreateBlogPostRequest;
 import app.quantun.blog.shared.valueobject.Slug;
@@ -37,7 +38,7 @@ public class BlogPostController {
                 request.title(),
                 request.content(),
                 request.summary(),
-                request.authorId(),
+                AuthorId.of(request.authorId()),
                 request.tags()
         );
 
@@ -61,6 +62,15 @@ public class BlogPostController {
     @GetMapping
     public ResponseEntity<List<BlogPostResponse>> getAllPublishedPosts() {
         var posts = getBlogPostUseCase.getAllPublished();
+        var response = posts.stream()
+                .map(BlogPostResponse::fromDomain)
+                .toList();
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/author/{authorId}")
+    public ResponseEntity<List<BlogPostResponse>> getPostsByAuthor(@PathVariable String authorId) {
+        var posts = getBlogPostUseCase.getAllByAuthor(AuthorId.of(authorId));
         var response = posts.stream()
                 .map(BlogPostResponse::fromDomain)
                 .toList();

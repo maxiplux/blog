@@ -1,7 +1,7 @@
 package app.quantun.blog.infrastructure.adapter.in.web;
 
+import app.quantun.blog.application.port.in.AddCommentUseCase;
 import app.quantun.blog.domain.model.PostId;
-import app.quantun.blog.domain.port.in.AddCommentUseCase;
 import app.quantun.blog.infrastructure.adapter.in.web.contract.request.CommentRequest;
 import app.quantun.blog.infrastructure.adapter.in.web.contract.response.CommentResponse;
 import jakarta.validation.Valid;

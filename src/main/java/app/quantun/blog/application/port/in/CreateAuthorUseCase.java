@@ -1,4 +1,4 @@
-package app.quantun.blog.domain.port.in;
+package app.quantun.blog.application.port.in;
 
 import app.quantun.blog.domain.model.Author;
 import lombok.Builder;

@@ -39,7 +39,7 @@ public record BlogPostResponse(
                 .content(blogPost.getContent())
                 .summary(blogPost.getSummary())
                 .slug(blogPost.getSlug().value())
-                .authorId(blogPost.getAuthorId())
+                .authorId(blogPost.getAuthorId().value())
                 .status(blogPost.getStatus())
                 .tags(blogPost.getTags().stream()
                         .map(tag -> tag.getName())

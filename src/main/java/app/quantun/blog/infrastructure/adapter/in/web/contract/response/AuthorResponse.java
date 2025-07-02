@@ -23,7 +23,7 @@ public record AuthorResponse(
 ) {
     public static AuthorResponse fromDomain(Author author) {
         return AuthorResponse.builder()
-                .id(author.getId())
+                .id(author.getId().value())
                 .name(author.getName())
                 .email(author.getEmail().value())
                 .bio(author.getBio())

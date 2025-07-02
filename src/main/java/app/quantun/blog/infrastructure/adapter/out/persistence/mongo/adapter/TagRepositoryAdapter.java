@@ -1,7 +1,7 @@
 package app.quantun.blog.infrastructure.adapter.out.persistence.mongo.adapter;
 
 import app.quantun.blog.domain.model.Tag;
-import app.quantun.blog.domain.port.out.TagRepositoryPort;
+import app.quantun.blog.application.port.out.TagRepositoryPort;
 import app.quantun.blog.infrastructure.adapter.out.persistence.mongo.entity.TagEntity;
 import app.quantun.blog.infrastructure.adapter.out.persistence.mongo.mapper.TagEntityMapper;
 import app.quantun.blog.infrastructure.adapter.out.persistence.mongo.repository.TagMongoRepository;

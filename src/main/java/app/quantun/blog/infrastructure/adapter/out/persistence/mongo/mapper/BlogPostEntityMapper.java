@@ -1,6 +1,7 @@
 package app.quantun.blog.infrastructure.adapter.out.persistence.mongo.mapper;
 
 
+import app.quantun.blog.domain.model.AuthorId;
 import app.quantun.blog.domain.model.BlogPost;
 import app.quantun.blog.domain.model.PostId;
 import app.quantun.blog.domain.model.PostStatus;
@@ -21,6 +22,7 @@ public interface BlogPostEntityMapper {
 
     @Mapping(source = "id.value", target = "id")
     @Mapping(source = "slug.value", target = "slug")
+    @Mapping(source = "authorId", target = "authorId", qualifiedByName = "authorIdToString")
     @Mapping(source = "status", target = "status", qualifiedByName = "statusToString")
     @Mapping(source = "tags", target = "tags", qualifiedByName = "tagsToEntities")
     @Mapping(source = "comments", target = "comments", qualifiedByName = "commentsToEntities")
@@ -28,6 +30,7 @@ public interface BlogPostEntityMapper {
 
     @Mapping(source = "id", target = "id", qualifiedByName = "stringToPostId")
     @Mapping(source = "slug", target = "slug", qualifiedByName = "stringToSlug")
+    @Mapping(source = "authorId", target = "authorId", qualifiedByName = "stringToAuthorId")
     @Mapping(source = "status", target = "status", qualifiedByName = "stringToStatus")
     @Mapping(source = "tags", target = "tags", qualifiedByName = "entitiesToTags")
     @Mapping(source = "comments", target = "comments", qualifiedByName = "entitiesToComments")
@@ -36,6 +39,16 @@ public interface BlogPostEntityMapper {
     @Named("stringToPostId")
     default PostId stringToPostId(String id) {
         return PostId.of(id);
+    }
+
+    @Named("authorIdToString")
+    default String authorIdToString(AuthorId id) {
+        return id.value();
+    }
+
+    @Named("stringToAuthorId")
+    default AuthorId stringToAuthorId(String id) {
+        return AuthorId.of(id);
     }
 
     @Named("stringToSlug")

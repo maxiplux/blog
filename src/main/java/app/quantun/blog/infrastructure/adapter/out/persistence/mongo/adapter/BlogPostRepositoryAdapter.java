@@ -1,9 +1,10 @@
 package app.quantun.blog.infrastructure.adapter.out.persistence.mongo.adapter;
 
+import app.quantun.blog.domain.model.AuthorId;
 import app.quantun.blog.domain.model.BlogPost;
 import app.quantun.blog.domain.model.PostId;
 import app.quantun.blog.domain.model.PostStatus;
-import app.quantun.blog.domain.port.out.BlogPostRepositoryPort;
+import app.quantun.blog.application.port.out.BlogPostRepositoryPort;
 import app.quantun.blog.infrastructure.adapter.out.persistence.mongo.entity.BlogPostEntity;
 import app.quantun.blog.infrastructure.adapter.out.persistence.mongo.mapper.BlogPostEntityMapper;
 import app.quantun.blog.infrastructure.adapter.out.persistence.mongo.repository.BlogPostMongoRepository;
@@ -53,8 +54,8 @@ public class BlogPostRepositoryAdapter implements BlogPostRepositoryPort {
     }
 
     @Override
-    public List<BlogPost> findByAuthorId(String authorId) {
-        return mongoRepository.findByAuthorId(authorId)
+    public List<BlogPost> findByAuthorId(AuthorId authorId) {
+        return mongoRepository.findByAuthorId(authorId.value())
                 .stream()
                 .map(mapper::toDomain)
                 .toList();

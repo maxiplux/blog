@@ -1,4 +1,4 @@
-package app.quantun.blog.domain.port.out;
+package app.quantun.blog.application.port.out;
 
 import app.quantun.blog.domain.model.Comment;
 import app.quantun.blog.domain.model.PostId;

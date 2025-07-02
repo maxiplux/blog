@@ -1,6 +1,8 @@
 package app.quantun.blog.infrastructure.adapter.in.web;
 
-import app.quantun.blog.domain.port.in.CreateAuthorUseCase;
+import app.quantun.blog.application.port.in.CreateAuthorUseCase;
+import app.quantun.blog.application.port.in.GetAuthorUseCase;
+import app.quantun.blog.domain.model.AuthorId;
 import app.quantun.blog.infrastructure.adapter.in.web.contract.response.AuthorResponse;
 import app.quantun.blog.infrastructure.adapter.in.web.contract.request.CreateAuthorRequest;
 import jakarta.validation.Valid;
@@ -36,7 +38,7 @@ public class AuthorController {
 
     @GetMapping("/{id}")
     public ResponseEntity<AuthorResponse> getAuthor(@PathVariable String id) {
-        var author = getAuthorUseCase.getAuthorById(id);
+        var author = getAuthorUseCase.getAuthorById(AuthorId.of(id));
         return ResponseEntity.ok(AuthorResponse.fromDomain(author));
     }
 }
