@@ -1,12 +1,7 @@
 package app.quantun.blog.infrastructure.adapter.out.persistence.mongo.mapper;
 
 
-import app.quantun.blog.domain.model.AuthorId;
-import app.quantun.blog.domain.model.BlogPost;
-import app.quantun.blog.domain.model.PostId;
-import app.quantun.blog.domain.model.PostStatus;
-import app.quantun.blog.domain.model.Tag;
-import app.quantun.blog.domain.model.Comment;
+import app.quantun.blog.domain.model.*;
 import app.quantun.blog.infrastructure.adapter.out.persistence.mongo.entity.BlogPostEntity;
 import app.quantun.blog.shared.valueobject.Slug;
 import org.mapstruct.Mapper;
@@ -63,7 +58,11 @@ public interface BlogPostEntityMapper {
 
     @Named("stringToStatus")
     default PostStatus stringToStatus(String status) {
-        return PostStatus.valueOf(status);
+        try {
+            return PostStatus.valueOf(status);
+        } catch (IllegalArgumentException e) {
+            return PostStatus.DRAFT; // Default fallback
+        }
     }
 
     @Named("tagsToEntities")

@@ -1,6 +1,6 @@
 package app.quantun.blog.infrastructure.adapter.in.web;
 
-import app.quantun.blog.application.port.in.AddCommentUseCase;
+import app.quantun.blog.application.command.port.in.AddCommentCommand;
 import app.quantun.blog.domain.model.PostId;
 import app.quantun.blog.infrastructure.adapter.in.web.contract.request.CommentRequest;
 import app.quantun.blog.infrastructure.adapter.in.web.contract.response.CommentResponse;
@@ -13,23 +13,23 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api")
 public class CommentController {
 
-    private final AddCommentUseCase addCommentUseCase;
+    private final AddCommentCommand addCommentCommand;
 
-    public CommentController(AddCommentUseCase addCommentUseCase) {
-        this.addCommentUseCase = addCommentUseCase;
+    public CommentController(AddCommentCommand addCommentCommand) {
+        this.addCommentCommand = addCommentCommand;
     }
 
     @PostMapping("/posts/{postId}/comments")
     public ResponseEntity<CommentResponse> addComment(@PathVariable String postId,
                                                       @Valid @RequestBody CommentRequest request) {
-        var command = AddCommentUseCase.AddCommentCommand.builder()
+        var command = AddCommentCommand.AddCommentCommandData.builder()
                 .postId(PostId.of(postId))
                 .content(request.content())
                 .authorName(request.authorName())
                 .authorEmail(request.authorEmail())
                 .build();
 
-        var comment = addCommentUseCase.addComment(command);
+        var comment = addCommentCommand.addComment(command);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(CommentResponse.fromDomain(comment));
     }

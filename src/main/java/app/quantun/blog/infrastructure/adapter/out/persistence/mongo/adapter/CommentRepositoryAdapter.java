@@ -1,9 +1,10 @@
 package app.quantun.blog.infrastructure.adapter.out.persistence.mongo.adapter;
 
 
+import app.quantun.blog.application.command.port.out.CommentCommandRepositoryPort;
+import app.quantun.blog.application.port.out.CommentRepositoryPort;
 import app.quantun.blog.domain.model.Comment;
 import app.quantun.blog.domain.model.PostId;
-import app.quantun.blog.application.port.out.CommentRepositoryPort;
 import app.quantun.blog.infrastructure.adapter.out.persistence.mongo.entity.CommentEntity;
 import app.quantun.blog.infrastructure.adapter.out.persistence.mongo.mapper.CommentEntityMapper;
 import app.quantun.blog.infrastructure.adapter.out.persistence.mongo.repository.CommentMongoRepository;
@@ -13,7 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Component
-public class CommentRepositoryAdapter implements CommentRepositoryPort {
+public class CommentRepositoryAdapter implements CommentRepositoryPort, CommentCommandRepositoryPort {
 
     private final CommentMongoRepository mongoRepository;
     private final CommentEntityMapper mapper;

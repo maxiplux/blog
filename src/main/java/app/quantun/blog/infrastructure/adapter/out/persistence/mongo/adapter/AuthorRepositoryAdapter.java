@@ -1,10 +1,11 @@
 package app.quantun.blog.infrastructure.adapter.out.persistence.mongo.adapter;
 
 
-
+import app.quantun.blog.application.command.port.out.AuthorCommandRepositoryPort;
+import app.quantun.blog.application.port.out.AuthorRepositoryPort;
+import app.quantun.blog.application.query.port.out.AuthorQueryRepositoryPort;
 import app.quantun.blog.domain.model.Author;
 import app.quantun.blog.domain.model.AuthorId;
-import app.quantun.blog.application.port.out.AuthorRepositoryPort;
 import app.quantun.blog.infrastructure.adapter.out.persistence.mongo.entity.AuthorEntity;
 import app.quantun.blog.infrastructure.adapter.out.persistence.mongo.mapper.AuthorEntityMapper;
 import app.quantun.blog.infrastructure.adapter.out.persistence.mongo.repository.AuthorMongoRepository;
@@ -14,7 +15,7 @@ import org.springframework.stereotype.Component;
 import java.util.Optional;
 
 @Component
-public class AuthorRepositoryAdapter implements AuthorRepositoryPort {
+public class AuthorRepositoryAdapter implements AuthorRepositoryPort, AuthorCommandRepositoryPort, AuthorQueryRepositoryPort {
 
     private final AuthorMongoRepository mongoRepository;
     private final AuthorEntityMapper mapper;
